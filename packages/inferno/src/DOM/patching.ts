@@ -45,6 +45,8 @@ export function patch(lastVNode: VNode, nextVNode: VNode, parentDom: Element, li
 		const nextFlags = nextVNode.flags;
 
 		if (nextFlags & VNodeFlags.Component) {
+			const isClass = (nextFlags & VNodeFlags.ComponentClass) > 0;
+
 			if (lastFlags & VNodeFlags.Component) {
 				patchComponent(
 					lastVNode,
@@ -53,7 +55,7 @@ export function patch(lastVNode: VNode, nextVNode: VNode, parentDom: Element, li
 					lifecycle,
 					context,
 					isSVG,
-					nextFlags & VNodeFlags.ComponentClass,
+					isClass,
 					isRecycling
 				);
 			} else {
@@ -65,7 +67,7 @@ export function patch(lastVNode: VNode, nextVNode: VNode, parentDom: Element, li
 						lifecycle,
 						context,
 						isSVG,
-						(nextFlags & VNodeFlags.ComponentClass) > 0
+						isClass
 					),
 					lastVNode,
 					lifecycle,
@@ -171,7 +173,7 @@ export function patchElement(lastVNode: VNode, nextVNode: VNode, parentDom: Elem
 			if (lastPropsOrEmpty !== EMPTY_OBJ) {
 				for (const prop in lastPropsOrEmpty) {
 					// do not add a hasOwnProperty check here, it affects performance
-					if (isNullOrUndef(nextPropsOrEmpty[ prop ])) {
+					if (isNullOrUndef(nextPropsOrEmpty[ prop ]) && !isNullOrUndef(lastPropsOrEmpty[ prop ])) {
 						removeProp(prop, lastPropsOrEmpty[ prop ], dom);
 					}
 				}
@@ -255,7 +257,7 @@ function patchChildren(lastFlags: VNodeFlags, nextFlags: VNodeFlags, lastChildre
 	}
 }
 
-export function patchComponent(lastVNode, nextVNode, parentDom, lifecycle: LifecycleClass, context, isSVG: boolean, isClass: number, isRecycling: boolean) {
+export function patchComponent(lastVNode, nextVNode, parentDom, lifecycle: LifecycleClass, context, isSVG: boolean, isClass: boolean, isRecycling: boolean) {
 	const lastType = lastVNode.type;
 	const nextType = nextVNode.type;
 	const lastKey = lastVNode.key;
