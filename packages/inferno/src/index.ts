@@ -1,3 +1,4 @@
+/* tslint:disable:object-literal-sort-keys */
 import { NO_OP, warning } from 'inferno-shared';
 import { LifecycleClass as _LifecycleClass} from 'inferno-shared';
 import _VNodeFlags from 'inferno-vnode-flags';
@@ -28,25 +29,25 @@ export declare const VNodeFlags: _VNodeFlags;
 export declare const Root: _Root;
 export declare const LifecycleClass: _LifecycleClass;
 
-const version = '3.2.2';
+const version = '3.3.1';
 
 // we duplicate it so it plays nicely with different module loading systems
 export default {
-	EMPTY_OBJ,
-	NO_OP,
-	cloneVNode,
-	createRenderer,
-	createVNode,
-	findDOMNode,
+	EMPTY_OBJ, // used to shared common items between Inferno libs
+	NO_OP, // used to shared common items between Inferno libs
+	cloneVNode, // cloning
+	createRenderer, // DOM
+	createVNode, // core shapes
+	findDOMNode, // DOM
 	getFlagsForElementVnode,
 	internal_DOMNodeMap,
 	internal_isUnitlessNumber,
 	internal_normalize,
 	internal_patch,
 	linkEvent,
-	options,
-	render,
-	version
+	options, // DOM
+	render, // DOM
+	version // DOM
 };
 
 export {

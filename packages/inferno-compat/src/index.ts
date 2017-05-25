@@ -291,11 +291,10 @@ if (isBrowser && typeof (window as any).React === 'undefined') {
 export {
 	// Bc we're trying to generate a complete declaration file
 	// See: https://github.com/Microsoft/TypeScript/issues/6307
-	ClassicComponentClass,
-	ComponentSpec,
-
 	Children,
+	ClassicComponentClass,
 	Component,
+	ComponentSpec,
 	DOM,
 	EMPTY_OBJ,
 	NO_OP,

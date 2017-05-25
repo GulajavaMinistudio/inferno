@@ -2,7 +2,7 @@
   "name": "inferno-build",
   "private": true,
   "license": "MIT",
-  "version": "3.2.2",
+  "version": "3.3.1",
   "author": {
     "name": "Dominic Gannaway",
     "email": "dg@domgan.com"
@@ -72,10 +72,11 @@
     "merge-source-map": "^1.0.3",
     "mkdirp": "^0.5.1",
     "mobx": "^3.1.10",
-    "mocha": "^3.4.1",
+    "mocha": "^3.4.2",
     "mocha-lcov-reporter": "^1.3.0",
     "most": "^1.3.0",
     "most-subject": "^5.3.0",
+    "npm-run-all": "^4.0.2",
     "nyc": "^10.3.2",
     "object.entries": "^1.0.4",
     "optimize-js": "^1.0.3",
@@ -99,7 +100,7 @@
     "typescript": "^2.3.3",
     "typescript-eslint-parser": "^3.0.0",
     "union-type-es": "^0.1.0",
-    "webpack": "^2.6.0",
+    "webpack": "^2.6.1",
     "webpack-dev-server": "^2.4.5"
   },
   "files": [
@@ -159,9 +160,11 @@
   "scripts": {
     "help": "node flip --help",
     "browser": "webpack-dev-server --config config/webpack.dev.conf.js",
+    "tdd": "run-p build:watch browser",
     "build:packages": "npm run build:packages-cjs && npm run build:packages-es",
     "build:packages-cjs": "lerna exec -- tsc --module commonjs --outDir dist --target es5",
     "build:packages-es": "lerna exec -- tsc",
+    "build:watch": "lerna exec --parallel --no-sort -- tsc --watch",
     "build:dev": "lerna exec -- node ../../bin/rollup",
     "build:prod": "cross-env NODE_ENV=production lerna exec -- node ../../bin/rollup",
     "build": "npm run clean && npm run build:packages && npm run build:dev && npm run build:prod",

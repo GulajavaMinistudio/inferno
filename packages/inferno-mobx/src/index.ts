@@ -19,8 +19,8 @@ export {
 	EventEmitter,
 	Provider,
 	componentByNodeRegistery,
-	connect,
 	connect as observer,
+	connect,
 	inject,
 	renderReporter,
 	trackComponents
