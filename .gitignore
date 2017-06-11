@@ -23,6 +23,8 @@ node_modules
 *~
 test/data/result.json
 
+*.orig
+
 packages/*/tsconfig.*
 packages/*/.npmignore
 packages/*/dist-es
@@ -34,3 +36,4 @@ test/data/result.json
 .fusebox
 .changelog
 .npm-debug.log*
+package-lock.json
