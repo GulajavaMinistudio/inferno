@@ -4,6 +4,7 @@
 
 import {
   isArray,
+  isInvalid,
   isNull,
   isNullOrUndef,
   isObject,
@@ -69,9 +70,6 @@ function hydrateComponent(
 ): Element {
   const type = vNode.type;
   const ref = vNode.ref;
-
-  vNode.dom = dom;
-
   const props = vNode.props || EMPTY_OBJ;
 
   if (isClass) {
@@ -88,6 +86,7 @@ function hydrateComponent(
 
     instance._vNode = vNode;
     hydrate(input, dom, lifecycle, instance._childContext, _isSVG);
+    vNode.dom = input.dom;
     mountClassComponentCallbacks(vNode, ref, instance, lifecycle);
     instance._updating = false; // Mount finished allow going sync
     if (options.findDOMNodeEnabled) {
@@ -130,7 +129,7 @@ function hydrateElement(
     return newDom as Element;
   }
   vNode.dom = dom;
-  if (children) {
+  if (!isInvalid(children)) {
     hydrateChildren(children, dom, lifecycle, context, isSVG);
   } else if (dom.firstChild !== null) {
     dom.textContent = ""; // dom has content, but VNode has no children remove everything from DOM
@@ -181,7 +180,9 @@ function hydrateChildren(
       if (dom.nodeValue !== children) {
         dom.nodeValue = children as string;
       }
-    } else if (children) {
+    } else if (children === "") {
+      parentDom.appendChild(document.createTextNode(""));
+    } else {
       parentDom.textContent = children as string;
     }
     if (!isNull(dom)) {
