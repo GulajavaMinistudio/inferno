@@ -145,7 +145,11 @@ export class RenderQueueStream extends Readable {
                     );
                   }
                   this.renderVNodeToQueue(
-                    instance.render(instance.props, instance.context),
+                    instance.render(
+                      instance.props,
+                      instance.state,
+                      instance.context
+                    ),
                     instance.context,
                     true,
                     promisePosition
@@ -161,7 +165,7 @@ export class RenderQueueStream extends Readable {
             }
           }
         }
-        const nextVNode = instance.render(props, vNode.context);
+        const nextVNode = instance.render(props, instance.state, vNode.context);
         instance._pendingSetState = false;
 
         this.renderVNodeToQueue(nextVNode, context, true, position);
