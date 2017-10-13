@@ -23,7 +23,8 @@ module.exports = function(version, options) {
       cacheRoot: `.rpt2_cache_${options.env}`,
       check: false,
       clean: true,
-      exclude: ["*.spec*", "**/*.spec*"]
+      exclude: ["*.spec*", "**/*.spec*"],
+      tsconfig: __dirname + "/../../../tsconfig.json" // Have absolute path to fix windows build
     }),
     bublePlugin()
   ];
@@ -35,6 +36,8 @@ module.exports = function(version, options) {
   if (options.replace) {
     replaceValues["process.env.NODE_ENV"] = JSON.stringify(options.env);
   }
+
+  plugins.push(replacePlugin(replaceValues));
 
   if (options.uglify) {
     plugins.push(
@@ -58,8 +61,6 @@ module.exports = function(version, options) {
       })
     );
   }
-
-  plugins.push(replacePlugin(replaceValues));
 
   if (options.optimize) {
     plugins.push(optJSPlugin);
