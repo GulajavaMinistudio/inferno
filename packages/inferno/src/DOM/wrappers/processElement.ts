@@ -2,12 +2,12 @@
  * @module Inferno
  */ /** TypeDoc Comment */
 
-import { isNullOrUndef } from "inferno-shared";
-import VNodeFlags from "inferno-vnode-flags";
-import { VNode } from "../../core/VNodes";
-import { isCheckedType, processInput } from "./InputWrapper";
-import { processSelect } from "./SelectWrapper";
-import { processTextarea } from "./TextareaWrapper";
+import { isNullOrUndef } from 'inferno-shared';
+import { VNodeFlags } from 'inferno-vnode-flags';
+import { VNode } from '../../core/implementation';
+import { isCheckedType, processInput } from './InputWrapper';
+import { processSelect } from './SelectWrapper';
+import { processTextarea } from './TextareaWrapper';
 
 /**
  * There is currently no support for switching same input between controlled and nonControlled
@@ -16,18 +16,18 @@ import { processTextarea } from "./TextareaWrapper";
  */
 
 export function processElement(
-  flags: number,
+  flags: VNodeFlags,
   vNode: VNode,
   dom: Element,
   nextPropsOrEmpty,
   mounting: boolean,
   isControlled: boolean
 ): void {
-  if ((flags & VNodeFlags.InputElement) > 0) {
+  if (flags & VNodeFlags.InputElement) {
     processInput(vNode, dom, nextPropsOrEmpty, mounting, isControlled);
-  } else if ((flags & VNodeFlags.SelectElement) > 0) {
+  } else if (flags & VNodeFlags.SelectElement) {
     processSelect(vNode, dom, nextPropsOrEmpty, mounting, isControlled);
-  } else if ((flags & VNodeFlags.TextareaElement) > 0) {
+  } else if (flags & VNodeFlags.TextareaElement) {
     processTextarea(vNode, dom, nextPropsOrEmpty, mounting, isControlled);
   }
 }

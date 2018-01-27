@@ -8,18 +8,11 @@ module.exports = {
   ],
   coverageDirectory: "coverage",
   coverageReporters: ["html", "lcov", "text"],
-  coverageThreshold: {
-    global: {
-      statements: 80,
-      branches: 75,
-      functions: 85,
-      lines: 85
-    }
-  },
   globals: {
     usingJSDOM: true,
     usingJest: true
   },
+  mapCoverage: true,
   moduleFileExtensions: ["ts", "js", "jsx", "json"],
   moduleNameMapper: {
     "^inferno-router/utils": "<rootDir>/packages/inferno-router/src/utils",
@@ -35,5 +28,6 @@ module.exports = {
     "^.+\\.jsx?$": "babel-jest",
     "^.+\\.tsx?$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
   },
-  transformIgnorePatterns: ["<rootDir>/node_modules/(?!lodash-es)"]
+  transformIgnorePatterns: ["<rootDir>/node_modules/(?!lodash-es)"],
+  setupTestFrameworkScriptFile: require.resolve("./JEST-DEBUG.js")
 };

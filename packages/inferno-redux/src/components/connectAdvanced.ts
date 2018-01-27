@@ -2,13 +2,11 @@
  * @module Inferno-Redux
  */ /** TypeDoc Comment */
 
-import {createVNode} from 'inferno';
-import VNodeFlags from "inferno-vnode-flags";
-import { Dispatch, Store } from "redux";
-
-import hoistStatics from "hoist-non-inferno-statics";
-import Component from "inferno-component";
-import { Subscription } from "../utils/Subscription";
+import { VNodeFlags } from 'inferno-vnode-flags';
+import { Dispatch, Store } from 'redux';
+import hoistNonReactStatics from 'hoist-non-inferno-statics';
+import { Component, createComponentVNode } from 'inferno';
+import { Subscription } from '../utils/Subscription';
 
 let hotReloadingVersion = 0;
 const dummyState = {};
@@ -41,53 +39,53 @@ const makeSelectorStateful = (sourceSelector, store) => {
 
 export interface IConnectOptions {
   /**
-	 * the func used to compute this HOC's displayName from the wrapped component's displayName.
-	 * probably overridden by wrapper functions such as connect().
-	 *
-	 * @memberOf IConnectOptions
-	 */
+   * the func used to compute this HOC's displayName from the wrapped component's displayName.
+   * probably overridden by wrapper functions such as connect().
+   *
+   * @memberOf IConnectOptions
+   */
   getDisplayName: (name: string) => string;
 
   /**
-	 * shown in error messages.
-	 * probably overridden by wrapper functions such as connect()
-	 *
-	 * @type {string}
-	 * @memberOf IConnectOptions
-	 */
+   * shown in error messages.
+   * probably overridden by wrapper functions such as connect()
+   *
+   * @type {string}
+   * @memberOf IConnectOptions
+   */
   methodName: string;
 
   /**
-	 * if defined, the name of the property passed to the wrapped element indicating the number of
-	 * calls to render. useful for watching in react devtools for unnecessary re-renders.
-	 *
-	 * @type {(string | null)}
-	 * @memberOf IConnectOptions
-	 */
+   * if defined, the name of the property passed to the wrapped element indicating the number of
+   * calls to render. useful for watching in react devtools for unnecessary re-renders.
+   *
+   * @type {(string | null)}
+   * @memberOf IConnectOptions
+   */
   renderCountProp: string | null;
 
   /**
-	 * determines whether this HOC subscribes to store changes.
-	 *
-	 * @type {boolean}
-	 * @memberOf IConnectOptions
-	 */
+   * determines whether this HOC subscribes to store changes.
+   *
+   * @type {boolean}
+   * @memberOf IConnectOptions
+   */
   shouldHandleStateChanges: boolean;
 
   /**
-	 * the key of props/context to get the store.
-	 *
-	 * @type {string}
-	 * @memberOf IConnectOptions
-	 */
+   * the key of props/context to get the store.
+   *
+   * @type {string}
+   * @memberOf IConnectOptions
+   */
   storeKey: string;
 
   /**
-	 * if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
-	 *
-	 * @type {boolean}
-	 * @memberOf IConnectOptions
-	 */
+   * if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
+   *
+   * @type {boolean}
+   * @memberOf IConnectOptions
+   */
   withRef: boolean;
 
   initMapStateToProps?: any;
@@ -128,20 +126,20 @@ export function connectAdvanced(
   selectorFactory: SelectorFactory,
   {
     getDisplayName = getDefaultName,
-    methodName = "connectAdvanced",
+    methodName = 'connectAdvanced',
     renderCountProp = null,
     shouldHandleStateChanges = true,
-    storeKey = "store",
+    storeKey = 'store',
     withRef = false,
     ...connectOptions
   }: Partial<IConnectOptions>
 ) {
-  const subscriptionKey = storeKey + "Subscription";
+  const subscriptionKey = storeKey + 'Subscription';
   const version = hotReloadingVersion++;
 
   const wrapWithConnect = <T extends Function>(WrappedComponent: T): T => {
     invariant(
-      typeof WrappedComponent === "function",
+      typeof WrappedComponent === 'function',
       `You must pass a component to the function returned by ` +
         `connect. Instead received ${WrappedComponent}`
     );
@@ -149,7 +147,7 @@ export function connectAdvanced(
     const wrappedComponentName: string =
       (WrappedComponent as any).displayName ||
       WrappedComponent.name ||
-      "Component";
+      'Component';
 
     const displayName = getDisplayName(wrappedComponentName);
 
@@ -170,7 +168,7 @@ export function connectAdvanced(
       public static displayName = displayName;
       public static WrappedComponent = WrappedComponent;
 
-      private version: number;
+      public version: number;
       private renderCount: number;
       private propsMode: boolean;
       private store: Store<any> | null;
@@ -334,7 +332,7 @@ export function connectAdvanced(
       }
 
       private addExtraProps(props: any) {
-        if (!withRef && !renderCountProp) {
+        if (!renderCountProp) {
           return props;
         }
 
@@ -343,9 +341,7 @@ export function connectAdvanced(
         // instance. a singleton memoized selector would then be holding a reference to the
         // instance, preventing the instance from being garbage collected, and that would be bad
         const withExtras = { ...props };
-        if (withRef) {
-          withExtras.ref = this.setWrappedInstance;
-        }
+
         if (renderCountProp) {
           withExtras[renderCountProp] = this.renderCount++;
         }
@@ -362,18 +358,18 @@ export function connectAdvanced(
         if (selector.error) {
           throw selector.error;
         } else {
-          return createVNode(
+          return createComponentVNode(
             VNodeFlags.ComponentUnknown,
             WrappedComponent,
+            this.addExtraProps(selector.props),
             null,
-            null,
-            this.addExtraProps(selector.props)
+            withRef ? this.setWrappedInstance : null
           );
         }
       }
     }
 
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV !== 'production') {
       (Connect.prototype as any).componentWillUpdate = function componentWillUpdate() {
         if (this.version !== version) {
           // We are hot reloading!
@@ -391,7 +387,7 @@ export function connectAdvanced(
       };
     }
 
-    return hoistStatics(Connect, WrappedComponent) as T;
+    return hoistNonReactStatics(Connect, WrappedComponent) as T;
   };
 
   return wrapWithConnect;

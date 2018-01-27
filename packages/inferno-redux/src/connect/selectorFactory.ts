@@ -2,7 +2,7 @@
  * @module Inferno-Redux
  */ /** TypeDoc Comment */
 
-import { verifySubselectors } from "./verifySubselectors";
+import { verifySubselectors } from './verifySubselectors';
 
 export const impureFinalPropsSelectorFactory = (
   mapStateToProps,
@@ -10,15 +10,13 @@ export const impureFinalPropsSelectorFactory = (
   mergeProps,
   dispatch
 ) => {
-  const impureFinalPropsSelector = (state, ownProps) => {
+  return (state, ownProps) => {
     return mergeProps(
       mapStateToProps(state, ownProps),
       mapDispatchToProps(dispatch, ownProps),
       ownProps
     );
   };
-
-  return impureFinalPropsSelector;
 };
 
 export const pureFinalPropsSelectorFactory = (
@@ -120,7 +118,7 @@ export const defaultSelectorFactory = (
   const mapDispatchToProps = initMapDispatchToProps(dispatch, options);
   const mergeProps = initMergeProps(dispatch, options);
 
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== 'production') {
     verifySubselectors(
       mapStateToProps,
       mapDispatchToProps,

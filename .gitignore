@@ -11,7 +11,12 @@ build
 coverage
 docs
 node_modules
+fixtures/browser/*.cmd
 
 packages/*/dist
 package-lock.json
 
+.rpt2_cache_development
+.rpt2_cache_production
+
+benchmarks/*/dist

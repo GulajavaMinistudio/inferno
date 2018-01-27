@@ -1,17 +1,17 @@
-import { render } from "inferno";
-import { innerHTML } from "inferno-utils";
+import { render } from 'inferno';
+import { innerHTML } from 'inferno-utils';
 
-describe("Select / select multiple (JSX)", () => {
+describe('Select / select multiple (JSX)', () => {
   let container;
 
   beforeEach(function() {
-    container = document.createElement("div");
+    container = document.createElement('div');
     document.body.appendChild(container);
   });
 
   afterEach(function() {
     render(null, container);
-    container.innerHTML = "";
+    container.innerHTML = '';
     document.body.removeChild(container);
   });
 
@@ -63,7 +63,7 @@ describe("Select / select multiple (JSX)", () => {
     );
 
     render(
-      <select multiple={true} value={"foo"}>
+      <select multiple={true} value={'foo'}>
         <option value={1}>1</option>
         <option value={2}>2</option>
       </select>,
@@ -88,7 +88,7 @@ describe("Select / select multiple (JSX)", () => {
       container
     );
     render(
-      <select multiple={true} value={"foo"}>
+      <select multiple={true} value={'foo'}>
         <option value="foo">foo</option>
         <option value="bar">bar</option>
       </select>,
@@ -117,7 +117,7 @@ describe("Select / select multiple (JSX)", () => {
     );
 
     render(
-      <select multiple={true} value={"bar"}>
+      <select multiple={true} value={'bar'}>
         <option value="foo">foo</option>
         <option value="bar">bar</option>
       </select>,
@@ -132,7 +132,7 @@ describe("Select / select multiple (JSX)", () => {
     );
   });
 
-  it("should populate the value attribute on select multiple using groups", () => {
+  it('should populate the value attribute on select multiple using groups', () => {
     const template = val => (
       <select multiple={true} value={val}>
         <optgroup label="foo-group">
@@ -145,7 +145,7 @@ describe("Select / select multiple (JSX)", () => {
     );
 
     // render(template(undefined), container);
-    render(template(["foo", "bar"]), container);
+    render(template(['foo', 'bar']), container);
 
     expect(container.firstChild.children[0].disabled).toEqual(false);
     expect(container.firstChild.children[1].disabled).toEqual(true);
@@ -176,7 +176,7 @@ describe("Select / select multiple (JSX)", () => {
       false
     );
 
-    render(template("foo"), container);
+    render(template('foo'), container);
 
     expect(container.firstChild.childNodes[0].innerHTML).toEqual(
       '<option value="foo"></option>'
@@ -190,7 +190,7 @@ describe("Select / select multiple (JSX)", () => {
       false
     );
 
-    render(template("bar"), container);
+    render(template('bar'), container);
 
     expect(container.firstChild.childNodes[0].innerHTML).toEqual(
       '<option value="foo"></option>'
@@ -221,9 +221,111 @@ describe("Select / select multiple (JSX)", () => {
     );
   });
 
+  it('should not fail if optgroup is empty', () => {
+    const template = val => (
+      <select multiple={true} value={val}>
+        <optgroup label="foo-group">
+          <option value="foo" />
+        </optgroup>
+        <optgroup />
+        <optgroup label="bar-group" disabled>
+          <option value="bar" />
+        </optgroup>
+      </select>
+    );
+
+    // render(template(undefined), container);
+    render(template(['foo', 'bar']), container);
+  });
+
+  it('Should be possible to render empty select', () => {
+    render(<select value="test" />, container);
+
+    expect(container.innerHTML).toEqual('<select></select>');
+  });
+
+  it('should populate the value attribute on select multiple using groups, multiple optgroups and options', () => {
+    const template = val => (
+      <select multiple={true} value={val}>
+        <optgroup label="foo-group">
+          <option value="foo" />
+          <option value="foo2" />
+          <option value="foo3" />
+        </optgroup>
+        <optgroup label="bar-group" disabled>
+          <option value="bar" />
+          <option value="bar2" />
+          <option value="bar3" />
+        </optgroup>
+      </select>
+    );
+
+    // render(template(undefined), container);
+    render(template(['foo', 'bar2']), container);
+
+    expect(container.firstChild.children[0].disabled).toEqual(false);
+    expect(container.firstChild.children[1].disabled).toEqual(true);
+
+    expect(container.firstChild.childNodes[0].innerHTML).toEqual(
+      '<option value="foo"></option><option value="foo2"></option><option value="foo3"></option>'
+    );
+    expect(container.firstChild.childNodes[1].innerHTML).toEqual(
+      '<option value="bar"></option><option value="bar2"></option><option value="bar3"></option>'
+    );
+
+    expect(container.firstChild.children[0].children[0].selected).toEqual(true);
+    expect(container.firstChild.children[1].children[1].selected).toEqual(true);
+
+    render(template([]), container);
+
+    expect(container.firstChild.childNodes[0].innerHTML).toEqual(
+      '<option value="foo"></option><option value="foo2"></option><option value="foo3"></option>'
+    );
+    expect(container.firstChild.childNodes[1].innerHTML).toEqual(
+      '<option value="bar"></option><option value="bar2"></option><option value="bar3"></option>'
+    );
+
+    expect(container.firstChild.children[0].children[0].selected).toEqual(
+      false
+    );
+    expect(container.firstChild.children[1].children[0].selected).toEqual(
+      false
+    );
+
+    render(template('foo'), container);
+
+    expect(container.firstChild.childNodes[0].innerHTML).toEqual(
+      '<option value="foo"></option><option value="foo2"></option><option value="foo3"></option>'
+    );
+    expect(container.firstChild.childNodes[1].innerHTML).toEqual(
+      '<option value="bar"></option><option value="bar2"></option><option value="bar3"></option>'
+    );
+
+    expect(container.firstChild.children[0].children[0].selected).toEqual(true);
+    expect(container.firstChild.children[1].children[0].selected).toEqual(
+      false
+    );
+
+    render(template('bar'), container);
+
+    expect(container.firstChild.children[0].children[0].selected).toEqual(
+      false
+    );
+    expect(container.firstChild.children[1].children[0].selected).toEqual(true);
+
+    render(template(false), container);
+
+    expect(container.firstChild.children[0].children[0].selected).toEqual(
+      false
+    );
+    expect(container.firstChild.children[1].children[0].selected).toEqual(
+      false
+    );
+  });
+
   it('should render "select" boolean on select options #3', () => {
     render(
-      <select multiple={true} value={"foo"}>
+      <select multiple={true} value={'foo'}>
         <option value="foo">foo</option>
         <option value="bar">bar</option>
       </select>,
@@ -241,7 +343,7 @@ describe("Select / select multiple (JSX)", () => {
 
   it('should render "select" boolean on select options #1', () => {
     render(
-      <select multiple={true} value={"foo"}>
+      <select multiple={true} value={'foo'}>
         <option value="foo">foo</option>
         <option value="bar">bar</option>
       </select>,
@@ -273,34 +375,34 @@ describe("Select / select multiple (JSX)", () => {
     );
   });
 
-  it("should assure the value attribute also set the value property for `textarea`", () => {
-    render(<textarea value={"foo"} />, container);
-    expect(container.firstChild.value).toEqual("foo");
-    render(<textarea value={"bar"} />, container);
-    expect(container.firstChild.value).toEqual("bar");
-    render(<textarea value={"bar"} />, container);
-    expect(container.firstChild.value).toEqual("bar");
-    render(<textarea value={"foo"} />, container);
-    expect(container.firstChild.value).toEqual("foo");
+  it('should assure the value attribute also set the value property for `textarea`', () => {
+    render(<textarea value={'foo'} />, container);
+    expect(container.firstChild.value).toEqual('foo');
+    render(<textarea value={'bar'} />, container);
+    expect(container.firstChild.value).toEqual('bar');
+    render(<textarea value={'bar'} />, container);
+    expect(container.firstChild.value).toEqual('bar');
+    render(<textarea value={'foo'} />, container);
+    expect(container.firstChild.value).toEqual('foo');
     render(<textarea value={null} />, container);
-    expect(container.firstChild.value).toEqual("");
+    expect(container.firstChild.value).toEqual('');
     render(<textarea value={undefined} />, container);
-    expect(container.firstChild.value).toEqual("");
-    render(<textarea value={"bar"} />, container);
-    expect(container.firstChild.value).toEqual("bar");
+    expect(container.firstChild.value).toEqual('');
+    render(<textarea value={'bar'} />, container);
+    expect(container.firstChild.value).toEqual('bar');
     render(<textarea value={[]} />, container);
-    expect(container.firstChild.value).toEqual("");
+    expect(container.firstChild.value).toEqual('');
     render(<textarea value={{}} />, container);
-    expect(container.firstChild.value).toEqual("[object Object]");
+    expect(container.firstChild.value).toEqual('[object Object]');
   });
 
-  it("should handle when multiple values passed in as an array", () => {
+  it('should handle when multiple values passed in as an array', () => {
     render(
-      <select multiple={true} value={["a", "b", "c"]}>
-        <option value={"a"}>a</option>
-        <option value={"b"}>b</option>
-        <option value={"c"}>c</option>
-        <option value={"d"}>d</option>
+      <select multiple={true} value={['a', 'b', 'c']}>
+        <option value={'a'}>a</option>
+        <option value={'b'}>b</option>
+        <option value={'c'}>c</option>
+        <option value={'d'}>d</option>
       </select>,
       container
     );
@@ -316,7 +418,7 @@ describe("Select / select multiple (JSX)", () => {
     );
   });
 
-  it("should handle when multiple options with selected set", () => {
+  it('should handle when multiple options with selected set', () => {
     render(
       <select multiple={true}>
         <option value="a" selected={true}>
@@ -344,12 +446,12 @@ describe("Select / select multiple (JSX)", () => {
     );
   });
 
-  it("Should render empty select", () => {
+  it('Should render empty select', () => {
     render(<select />, container);
-    expect(container.innerHTML).toEqual(innerHTML("<select></select>"));
+    expect(container.innerHTML).toEqual(innerHTML('<select></select>'));
   });
 
-  it("should render defaultValue", () => {
+  it('should render defaultValue', () => {
     render(
       <select defaultValue="b">
         <option value="a">a</option>
@@ -370,13 +472,13 @@ describe("Select / select multiple (JSX)", () => {
     );
   });
 
-  it("should render multiple defaultValue", () => {
+  it('should render multiple defaultValue', () => {
     render(
-      <select multiple={true} defaultValue={["a", "b", "c"]}>
-        <option value={"a"}>a</option>
-        <option value={"b"}>b</option>
-        <option value={"c"}>c</option>
-        <option value={"d"}>d</option>
+      <select multiple={true} defaultValue={['a', 'b', 'c']}>
+        <option value={'a'}>a</option>
+        <option value={'b'}>b</option>
+        <option value={'c'}>c</option>
+        <option value={'d'}>d</option>
       </select>,
       container
     );
@@ -392,7 +494,7 @@ describe("Select / select multiple (JSX)", () => {
     );
   });
 
-  it("should not touch selections, if value or selected, is null or undefined", () => {
+  it('should not touch selections, if value or selected, is null or undefined', () => {
     render(
       <select>
         <option value="a">a</option>
@@ -412,7 +514,7 @@ describe("Select / select multiple (JSX)", () => {
     expect(container.firstChild.children[1].selected).toEqual(true);
   });
 
-  it("should render specified default selected option", () => {
+  it('should render specified default selected option', () => {
     render(
       <select>
         <option value="a">a</option>
@@ -426,7 +528,7 @@ describe("Select / select multiple (JSX)", () => {
     expect(container.firstChild.children[1].selected).toEqual(true); // Currently failing due to issue #1031
   });
 
-  it("Should have selectedIndex -1 and value as null when value is removed - Github #1105", () => {
+  it('Should have selectedIndex -1 and value as null when value is removed - Github #1105', () => {
     render(
       <select id="sel" value="">
         <option value="">a</option>
@@ -434,7 +536,7 @@ describe("Select / select multiple (JSX)", () => {
       container
     );
     expect(container.firstChild.selectedIndex).toBe(0);
-    expect(container.firstChild.value).toBe("");
+    expect(container.firstChild.value).toBe('');
 
     render(
       <select id="sel">
@@ -442,7 +544,7 @@ describe("Select / select multiple (JSX)", () => {
       </select>,
       container
     );
-    expect(container.firstChild.value).toBe("");
+    expect(container.firstChild.value).toBe('');
     expect([0, -1]).toContain(container.firstChild.selectedIndex);
   });
 });

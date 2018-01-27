@@ -2,127 +2,91 @@
  * @module Inferno
  */ /** TypeDoc Comment */
 
-import {
-  isArray,
-  isFunction,
-  isInvalid,
-  isNull,
-  isNullOrUndef,
-  isObject,
-  isUndefined,
-  LifecycleClass
-} from "inferno-shared";
-import VNodeFlags from "inferno-vnode-flags";
-import { options } from "../core/options";
-import { VNode } from "../core/VNodes";
-import { isAttrAnEvent, patchEvent } from "./patching";
-import { poolComponent, poolElement } from "./recycling";
-import { componentToDOMNodeMap } from "./rendering";
-import { EMPTY_OBJ, removeChild } from "./utils";
+import { isFunction, isNull, isNullOrUndef, isObject } from 'inferno-shared';
+import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
+import { options, VNode } from '../core/implementation';
+import { delegatedEvents } from './constants';
+import { handleEvent } from './events/delegation';
+import { EMPTY_OBJ, removeChild } from './utils/common';
 
-export function unmount(
-  vNode: VNode,
-  parentDom: Element | null,
-  lifecycle: LifecycleClass,
-  canRecycle: boolean,
-  isRecycling: boolean
-) {
+export function remove(vNode: VNode, parentDom: Element | null) {
+  unmount(vNode);
+
+  if (!isNull(parentDom)) {
+    removeChild(parentDom, vNode.dom as Element);
+    // Let carbage collector free memory
+    vNode.dom = null;
+  }
+}
+
+export function unmount(vNode) {
   const flags = vNode.flags;
-  const dom = vNode.dom as Element;
 
-  if (flags & VNodeFlags.Component) {
-    const instance = vNode.children as any;
-    const isStatefulComponent: boolean =
-      (flags & VNodeFlags.ComponentClass) > 0;
-    const props = vNode.props || EMPTY_OBJ;
-    const ref = vNode.ref as any;
-
-    if (!isRecycling) {
-      if (isStatefulComponent) {
-        if (!instance._unmounted) {
-          if (!isNull(options.beforeUnmount)) {
-            options.beforeUnmount(vNode);
-          }
-          if (!isUndefined(instance.componentWillUnmount)) {
-            instance.componentWillUnmount();
-          }
-          if (ref && !isRecycling) {
-            ref(null);
-          }
-          instance._unmounted = true;
-          if (options.findDOMNodeEnabled) {
-            componentToDOMNodeMap.delete(instance);
-          }
-
-          unmount(
-            instance._lastInput,
-            null,
-            instance._lifecycle,
-            false,
-            isRecycling
-          );
-        }
-      } else {
-        if (!isNullOrUndef(ref)) {
-          if (!isNullOrUndef(ref.onComponentWillUnmount)) {
-            ref.onComponentWillUnmount(dom, props);
-          }
-        }
-
-        unmount(instance, null, lifecycle, false, isRecycling);
-      }
-    }
-    if (
-      options.recyclingEnabled &&
-      !isStatefulComponent &&
-      (parentDom || canRecycle)
-    ) {
-      poolComponent(vNode);
-    }
-  } else if (flags & VNodeFlags.Element) {
+  if (flags & VNodeFlags.Element) {
     const ref = vNode.ref as any;
     const props = vNode.props;
 
-    if (!isRecycling && isFunction(ref)) {
+    if (isFunction(ref)) {
       ref(null);
     }
 
     const children = vNode.children;
+    const childFlags = vNode.childFlags;
 
-    if (!isNullOrUndef(children)) {
-      if (isArray(children)) {
-        for (
-          let i = 0, len = (children as Array<string | number | VNode>).length;
-          i < len;
-          i++
-        ) {
-          const child = children[i];
-
-          if (!isInvalid(child) && isObject(child)) {
-            unmount(child as VNode, null, lifecycle, false, isRecycling);
-          }
-        }
-      } else if (isObject(children)) {
-        unmount(children as VNode, null, lifecycle, false, isRecycling);
-      }
+    if (childFlags & ChildFlags.MultipleChildren) {
+      unmountAllChildren(children);
+    } else if (childFlags & ChildFlags.HasVNodeChildren) {
+      unmount(children as VNode);
     }
 
     if (!isNull(props)) {
       for (const name in props) {
-        // do not add a hasOwnProperty check here, it affects performance
-        if (props[name] !== null && isAttrAnEvent(name)) {
-          patchEvent(name, props[name], null, dom);
-          // We need to set this null, because same props otherwise come back if SCU returns false and we are recyling
-          props[name] = null;
+        // Remove all delegated events, regular events die with dom node
+        if (delegatedEvents.has(name)) {
+          handleEvent(name, null, vNode.dom);
         }
       }
     }
-    if (options.recyclingEnabled && (parentDom || canRecycle)) {
-      poolElement(vNode);
+  } else if (flags & VNodeFlags.Component) {
+    const instance = vNode.children as any;
+    const ref = vNode.ref as any;
+
+    if (flags & VNodeFlags.ComponentClass) {
+      if (isFunction(options.beforeUnmount)) {
+        options.beforeUnmount(vNode);
+      }
+      if (isFunction(instance.componentWillUnmount)) {
+        instance.componentWillUnmount();
+      }
+      if (isFunction(ref)) {
+        ref(null);
+      }
+      instance.$UN = true;
+
+      unmount(instance.$LI);
+    } else {
+      if (!isNullOrUndef(ref) && isFunction(ref.onComponentWillUnmount)) {
+        ref.onComponentWillUnmount(vNode.dom, vNode.props || EMPTY_OBJ);
+      }
+
+      unmount(instance);
+    }
+  } else if (flags & VNodeFlags.Portal) {
+    const children = vNode.children;
+
+    if (!isNull(children) && isObject(children)) {
+      remove(children as VNode, vNode.type);
     }
   }
+}
 
-  if (!isNull(parentDom)) {
-    removeChild(parentDom, dom as Element);
+export function unmountAllChildren(children: VNode[]) {
+  for (let i = 0, len = children.length; i < len; i++) {
+    unmount(children[i]);
   }
+}
+
+export function removeAllChildren(dom: Element, children) {
+  unmountAllChildren(children);
+  dom.textContent = '';
 }

@@ -2,8 +2,8 @@
  * @module Inferno-Mobx
  */ /** TypeDoc Comment */
 
-export default class EventEmitter {
-  private listeners: Function[] = [];
+export class EventEmitter {
+  public listeners: Function[] = [];
 
   public on(cb: Function) {
     this.listeners.push(cb);
@@ -20,13 +20,5 @@ export default class EventEmitter {
     for (let i = 0, len = listeners.length; i < len; i++) {
       listeners[i](data);
     }
-  }
-
-  public getTotalListeners(): number {
-    return this.listeners.length;
-  }
-
-  public clearListeners(): void {
-    this.listeners = [];
   }
 }

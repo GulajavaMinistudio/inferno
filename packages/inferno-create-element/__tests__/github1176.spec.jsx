@@ -1,25 +1,24 @@
-import { render } from "inferno";
-import Component from "inferno-component";
-import { Router, Route, Link } from "inferno-router";
-import createMemoryHistory from "history/createMemoryHistory";
-import { triggerEvent } from "inferno-utils";
+import { Component, render } from 'inferno';
+import { Link, Route, Router, Switch } from 'inferno-router';
+import createMemoryHistory from 'history/createMemoryHistory';
+import { triggerEvent } from 'inferno-utils';
 
-describe("Github1176", () => {
+describe('Github1176', () => {
   let container;
   const browserHistory = createMemoryHistory();
 
   beforeEach(function() {
-    container = document.createElement("div");
+    container = document.createElement('div');
     document.body.appendChild(container);
   });
 
   afterEach(function() {
     render(null, container);
-    container.innerHTML = "";
+    container.innerHTML = '';
     document.body.removeChild(container);
   });
 
-  it("Should not crash", done => {
+  it('Should not crash', done => {
     const Loader = () => <div className="loader">Loader...</div>;
 
     class Component1 extends Component {
@@ -74,27 +73,29 @@ describe("Github1176", () => {
 
     const routes = (
       <Router history={browserHistory}>
-        <Route component={Component1} path="/" />
-        <Route component={Component2} path="/component2" />
+        <Switch>
+          <Route component={Component1} path="/" exact />
+          <Route component={Component2} path="/component2" exact />
+        </Switch>
       </Router>
     );
 
     render(routes, container);
 
-    expect(container.querySelectorAll(".component1").length).toBe(1);
-    const div2 = container.querySelector("#com2");
-    triggerEvent("click", div2);
+    expect(container.querySelectorAll('.component1').length).toBe(1);
+    const div2 = container.querySelector('#com2');
+    triggerEvent('click', div2);
 
     setTimeout(() => {
-      expect(container.querySelectorAll(".component1").length).toBe(0);
-      expect(container.querySelectorAll(".component2").length).toBe(1);
+      expect(container.querySelectorAll('.component1').length).toBe(0);
+      expect(container.querySelectorAll('.component2').length).toBe(1);
 
-      const clear = container.querySelector("#clear");
+      const clear = container.querySelector('#clear');
       clear.click();
 
-      expect(container.innerHTML).toBe("");
-      expect(container.querySelectorAll(".component2").length).toBe(0);
-      expect(container.querySelectorAll(".component1").length).toBe(0);
+      expect(container.innerHTML).toBe('');
+      expect(container.querySelectorAll('.component2').length).toBe(0);
+      expect(container.querySelectorAll('.component1').length).toBe(0);
       done();
     }, 25);
   });

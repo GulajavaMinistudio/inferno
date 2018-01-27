@@ -12,6 +12,107 @@
 
 Inferno is an insanely fast, `9kb` React-like library for building high-performance user interfaces on both the client and server.
 
+## Help testing v4!
+Inferno is shipping the next major version soon. You can help testing it by trying it out! All packages are published under "next" npm tag.
+
+`npm i inferno@next`
+
+`npm i inferno-router@next`
+
+`npm i babel-plugin-inferno@next`
+
+In this release we are trying to focus on increasing performance of previous slow code paths. `inferno-server` performance has been boosted up to 10times depending on the workload.
+
+JSX users will also see performance benefit when static nodes are used. You no longer need to add `$NoNormalize` flag on those nodes.
+It's done automatically in compilation time.
+
+
+Documentation rewrite is going on at the moment. If you find any issues using the new version please file a Github issue. See JSFiddle link below to reproduce the issue.
+
+### V4 highlights
+
+#### Features:
+
+`{Inferno.createPortal(vNode, DOM)}` can be used to render Component or vNode to external location (DOM)
+
+Router has been updated to v4 to match React Router v4 API
+
+Mobx/Redux integrations have been ported to the latest version
+
+new JSX flag: `$ReCreate` has been added
+
+defaultHooks has been added to Functional Components
+
+```
+function Static() {
+    return <div>1</div>;
+}
+
+Static.defaultHooks = {
+    onComponentShouldUpdate() {
+        return false;
+    }
+}
+
+export const Com = Static;
+```
+
+TouchEvents are now part of Synthetic event system
+
+
+#### Breaking changes:
+
+`inferno-component` is removed. Inferno.Component (ES6) Class has been moved to `inferno` package.
+
+`findDOMNode` has been moved to `inferno-compat`
+
+string components now require `inferno-compat`
+
+Default exports have been removed from all packages except `inferno-compat`
+
+Inferno packages are now using peerDependencies to external components to avoid duplicates
+
+`module` entry has been added to package.json for all packages.
+
+NOTE: This points to production build of Inferno. If you are doing development using Inferno you should use `dist/index.dev.js` or use module entry point: `dev:module`
+
+`creatVNode` cannot be used to create Component vNodes anymore. use `createComponentVNode(flags, type, props, key, ref)` instead.
+
+There is no more "noNormalize" parameter for `createVNode` if you have been using it and you need to normalize children use `Inferno.normalizeChildren` method.
+
+
+
+#### Common changes:
+
+All Inferno properties follow the same naming convention.
+
+JSX Flags
+
+`NoNormalize` => `$NoNormalize`
+
+`hasKeyedChildren` => `$HasKeyedChildren`
+
+`hasNonKeyedChildren` => `$HasNonKeyedChildren`
+
+ES6 Component properties that are considered private are now `$` - prefixed.
+
+Normalization process generated keys are now `$` - prefixed.
+
+
+
+### Bug Fixes
+
+XSS vulnerability has been fixed in `inferno-server` package
+
+`dangerouslySetInnerHTML` now correctly unmounts previous nodes
+
+hundreds of new tests have been added to `inferno-compat`
+
++many more
+
+
+# Inferno Description
+
 To quote a member of the React core team at Facebook:
 > Inferno 1.0 is really well written. It's how I would've rewritten React. I'd recommend reading its source to learn.
 
@@ -69,8 +170,7 @@ Inferno.render(
 Furthermore, Inferno also uses ES6 components like React:
 
 ```jsx
-import Inferno from 'inferno';
-import Component from 'inferno-component';
+import Inferno, { Component } from 'inferno';
 
 class MyComponent extends Component {
   constructor(props) {
@@ -98,6 +198,7 @@ Inferno.render(
 ### More Examples
 
 - [**Simple Clock** (@JSFiddle)](https://jsfiddle.net/wt5vL603/)
+- [**Simple Clock Inferno v4** (@JSFiddle)](https://jsfiddle.net/samkgLe5/)
 
 ## Getting Started
 
@@ -114,8 +215,6 @@ npm install --save inferno
 Addons:
 
 ```sh
-# ES2015 class components
-npm install --save inferno-component
 # server-side rendering
 npm install --save inferno-server
 # routing
@@ -123,6 +222,12 @@ npm install --save inferno-router
 ```
 
 Pre-bundled files for browser consumption can be found on [our cdnjs](https://cdnjs.com/libraries/inferno):
+
+Or on jsDelivr:
+
+```
+https://cdn.jsdelivr.net/npm/inferno@latest/dist/inferno.min.js
+```
 
 Or on unpkg.com:
 
@@ -254,7 +359,7 @@ See [inferno-most-fp-demo](https://github.com/joshburgess/inferno-most-fp-demo) 
 Creates an Inferno VNode using a similar API to that found with React's `createElement()`
 
 ```javascript
-import Component from 'inferno-component';
+import { Component } from 'inferno';
 import createElement from 'inferno-create-element';
 
 class BasicComponent extends Component {
@@ -275,12 +380,12 @@ Inferno.render(
 );
 ```
 
-### `Component` (package: `inferno-component`)
+### `Component` (package: `inferno`)
 
 **Class component:**
 
 ```javascript
-import Component from 'inferno-component';
+import { Component } from 'inferno';
 
 class MyComponent extends Component {
   render() {
@@ -319,13 +424,12 @@ Inferno.createVNode(
 
 Create a new Inferno `VNode` using `createVNode()`. A `VNode` is a virtual DOM object that is used to
 describe a single element of the UI. Typically `createElement()` (package: `inferno-create-element`), `h()` (package: `inferno-hyperscript`) or JSX are used to create
-`VNode`s for Inferno, but under the hood they all use `createVNode()`. Below is an example of using
-of `createVNode` usage:
+`VNode`s for Inferno, but under the hood they all use `createVNode()`. Below is an example of `createVNode` usage:
 
 ```javascript
 import Inferno from 'inferno';
 
-const vNode = Inferno.createVNode(2, 'div', 'example', 'Hello world!');
+const vNode = Inferno.createVNode(VNodeFlags.HtmlElement, 'div', 'example', 'Hello world!');
 
 Inferno.render(vNode, container);
 ```
@@ -353,7 +457,7 @@ An example of using `cloneVNode`:
 ```javascript
 import Inferno from 'inferno';
 
-const vNode = Inferno.createVNode(2, 'div', 'example', 'Hello world!');
+const vNode = Inferno.createVNode(VNodeFlags.HtmlElement, 'div', 'example', 'Hello world!');
 const newVNode = Inferno.cloneVNode(vNode, { id: 'new' }); // we are adding an id prop to the VNode
 
 Inferno.render(newVNode, container);
@@ -370,8 +474,8 @@ const newVNode = Inferno.cloneVNode(vNode, { id: 'new' }); // we are adding an i
 Inferno.render(newVNode, container);
 ```
 
-### `findDOMNode` (package: `inferno`)
-
+### `findDOMNode` (package: `inferno-compat`)
+This feature has been moved from inferno to inferno-compat in v4 forward.
 Once enabled via `Inferno.options.findDOMNodeEnabled = true;` at the start of an application, `findDOMNode()` is enabled.
 
 Note: we recommend using a `ref` callback on a component to find its instance, rather than using `findDOMNode()`. `findDOMNode()` cannot be used on functional components and it introduces a significant performance impact.
@@ -399,8 +503,7 @@ This is an example of using it with ES2015 classes:
 
 
 ```jsx
-import Inferno, { linkEvent } from 'inferno';
-import Component from 'inferno-component';
+import Inferno, { linkEvent, Component } from 'inferno';
 
 function handleClick(instance, event) {
   instance.setState({ data: event.target.value });
@@ -434,9 +537,9 @@ You can set default options for Inferno using `Inferno.options`. Below are the f
 
 This enables `findDOMNode()`. We strongly recommend against using this API as it introduces a significant impact to performance. In the future this API command will be removed, along with `findDOMNode()`;
 
-#### - `recyclingEnabled` (default: v1.3+ `false`)
+#### - Inferno < 4.0 `recyclingEnabled` (default: v1.3+ `false`)
 
-This enables DOM node recycling within Inferno, so that DOM nodes are re-used upon disposal. It can have significant performance benefits, but may also cause side-effects with custom elements.
+This enables DOM node recycling within Inferno, so that DOM nodes are re-used upon disposal. It can have significant performance benefits, but may also cause side-effects with custom elements. This setting was removed in Inferno 4.0.
 
 ## Functional component lifecycle events
 
@@ -468,7 +571,7 @@ Inferno.render(
 );
 ```
 
-Please note: class components (ES2015 classes) from `inferno-component` **do not** support the same lifecycle events (they have their own lifecycle events that work as methods on the class itself).
+Please note: class components (ES2015 classes) from `inferno` **do not** support the same lifecycle events (they have their own lifecycle events that work as methods on the class itself).
 
 ## Development vs Production modes
 
@@ -539,8 +642,3 @@ Inferno wants to always deliver great performance. In order to do so, it has to 
 ## Community
 
 There is an [Inferno Slack](https://infernojs.slack.com). You can join via [inferno-slack.herokuapp.com](https://inferno-slack.herokuapp.com).
-
-### Inferno is supported by BrowserStack
-
-<img src="http://infernojs.org/browserstack.svg" height="50px" alt="Supported by Browserstack" />
-<img src="https://www.digitalocean.com/assets/media/logos-badges/png/DO_Powered_by_Badge_black-a35c64eb.png" height="50px" alt="Supported by Digital Ocean" />

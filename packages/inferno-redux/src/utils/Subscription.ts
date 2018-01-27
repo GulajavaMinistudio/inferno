@@ -2,7 +2,8 @@
  * @module Inferno-Redux
  */ /** TypeDoc Comment */
 
-import { Store, Unsubscribe } from "redux";
+import { Store, Unsubscribe } from 'redux';
+
 export type Listener = () => void;
 
 interface IListenerCollection {
@@ -47,7 +48,7 @@ const createListenerCollection = (): IListenerCollection => {
       }
       next!.push(listener);
 
-      const unsubscribe = () => {
+      return () => {
         if (!isSubscribed || current === null) {
           return;
         }
@@ -58,8 +59,6 @@ const createListenerCollection = (): IListenerCollection => {
         }
         next!.splice(next!.indexOf(listener), 1);
       };
-
-      return unsubscribe;
     }
   };
 };

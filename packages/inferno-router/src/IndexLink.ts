@@ -2,11 +2,20 @@
  * @module Inferno-Router
  */ /** TypeDoc Comment */
 
-import { createVNode, VNode } from "inferno";
-import VNodeFlags from "inferno-vnode-flags";
-import Link from "./Link";
+import { createComponentVNode } from 'inferno';
+import { VNodeFlags } from 'inferno-vnode-flags';
+import { NavLink } from './NavLink';
 
-export default function IndexLink(props): VNode {
-  props.to = "/";
-  return createVNode(VNodeFlags.ComponentFunction, Link, null, null, props);
+/**
+ * @deprecated
+ */
+export function IndexLink(props): any {
+  if (process.env.NODE_ENV !== 'production') {
+    // tslint:disable-next-line:no-console
+    console.error(
+      'Using IndexLink is deprecated. Please use Link or NavLink instead.'
+    );
+  }
+
+  return createComponentVNode(VNodeFlags.ComponentFunction, NavLink, props);
 }

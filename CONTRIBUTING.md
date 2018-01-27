@@ -30,7 +30,6 @@ Lerna v2.0.0-beta.36
 inferno-shared
 inferno-vnode-flags
 inferno
-inferno-component
 inferno-hyperscript
 inferno-create-element
 inferno-devtools
@@ -57,7 +56,8 @@ npm i -g lerna
 
 - Clone the repository, and clean it. `lerna clean`
 - Install development dependencies `npm i`
-- build typescript files and run tests `npm run tdd` after its done open http://localhost:8080 and you will see mocha test suite
+- build typescript files `npm run build`
+- run tests `npm run test`
 
 
 Pull requests
@@ -87,3 +87,14 @@ Small print
 -----------
 
 There's no contributor license agreement - contributions are made on a common sense basis. Inferno is distributed under the MIT license, which means your contributions will be too.
+
+Debugging
+---------
+Its possible to debug inferno tests by running following command `npm run debug` and open chrome web address: chrome://inspect/#devices
+However: The issue is that ts-jest does post processing to compiled files this needs to be avoided.
+Edit following files: /node_modules/ts-jest/dist/postprocess.js and remove following settings line numer 15 => retainLines: true, sourceMaps: 'inline'.
+
+Pro tip: You can filter down number of tests by editing `debug` -task:
+`node --inspect-brk ./node_modules/.bin/jest {*edit this*} --runInBand --no-cache --no-watchman`
+Change parameter to jest to match only files you want to run.
+Happy debugging!

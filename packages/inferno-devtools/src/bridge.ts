@@ -2,28 +2,21 @@
  * @module Inferno-Devtools
  */ /** TypeDoc Comment */
 
-import { options } from "inferno";
+import { options } from 'inferno';
 import {
   isArray,
   isInvalid,
   isObject,
   isStringOrNumber,
   isUndefined
-} from "inferno-shared";
-import VNodeFlags from "inferno-vnode-flags";
+} from 'inferno-shared';
+import { VNodeFlags } from 'inferno-vnode-flags';
 
 function findVNodeFromDom(vNode, dom) {
   if (!vNode) {
     const roots = options.roots;
 
-    for (let i = 0, len = roots.length; i < len; i++) {
-      const root = roots[i];
-      const result = findVNodeFromDom(root.input, dom);
-
-      if (result) {
-        return result;
-      }
-    }
+    return roots.get(dom);
   } else {
     if (vNode.dom === dom) {
       return vNode;
@@ -32,7 +25,7 @@ function findVNodeFromDom(vNode, dom) {
     let children = vNode.children;
 
     if (flags & VNodeFlags.Component) {
-      children = children._lastInput || children;
+      children = children.$LI || children;
     }
     if (children) {
       if (isArray(children)) {
@@ -65,9 +58,9 @@ function getKeyForVNode(vNode) {
 
   if (flags & VNodeFlags.ComponentClass) {
     return vNode.children;
-  } else {
-    return vNode.dom;
   }
+
+  return vNode.dom;
 }
 
 function getInstanceFromVNode(vNode) {
@@ -242,13 +235,9 @@ export function createDevToolsBridge() {
 }
 
 function isRootVNode(vNode) {
-  for (let i = 0, len = options.roots.length; i < len; i++) {
-    const root = options.roots[i];
-
-    if (root.input === vNode) {
-      return true;
-    }
-  }
+  return Boolean(
+    vNode.dom && vNode.dom.parentNode && options.roots.has(vNode.dom.parentNode)
+  );
 }
 
 /**
@@ -284,7 +273,7 @@ function updateReactComponent(vNode, parentDom) {
 }
 
 function isInvalidChild(child) {
-  return isInvalid(child) || child === "";
+  return isInvalid(child) || child === '';
 }
 
 function normalizeChildren(children, dom) {
@@ -293,7 +282,7 @@ function normalizeChildren(children, dom) {
       .filter(child => !isInvalidChild(child))
       .map(child => updateReactComponent(child, dom));
   } else {
-    return !(isInvalidChild(children) || children === "")
+    return !(isInvalidChild(children) || children === '')
       ? [updateReactComponent(children, dom)]
       : [];
   }
@@ -336,7 +325,7 @@ function createReactDOMComponent(vNode, parentDom) {
 }
 
 function normalizeKey(key) {
-  if (key && key[0] === ".") {
+  if (key && key[0] === '.') {
     return null;
   }
 }
@@ -354,7 +343,7 @@ function normalizeKey(key) {
 function createReactCompositeComponent(vNode, isFirstCreation) {
   const type = vNode.type;
   const instance = vNode.children;
-  const lastInput = instance._lastInput || instance;
+  const lastInput = instance.$LI || instance;
   const dom = vNode.dom;
 
   const compositeComponent = {
@@ -370,13 +359,13 @@ function createReactCompositeComponent(vNode, isFirstCreation) {
       return typeName(type);
     },
     node: dom,
-    props: instance.props,
-    setState: instance.setState.bind(instance),
-    state: instance.state,
+    props: instance && instance.props,
+    setState: instance && instance.setState && instance.setState.bind(instance),
+    state: instance && instance.state,
     vNode
   };
 
-  if (isFirstCreation) {
+  if (isFirstCreation && instance && instance.forceUpdate) {
     const forceInstanceUpdate = instance.forceUpdate.bind(instance); // Save off for use below.
     instance.forceUpdate = () => {
       instance.props = vNode.props = Object.assign(
@@ -394,7 +383,7 @@ function createReactCompositeComponent(vNode, isFirstCreation) {
 }
 
 function nextRootKey(roots) {
-  return "." + Object.keys(roots).length;
+  return '.' + Object.keys(roots).length;
 }
 
 /**
@@ -423,7 +412,7 @@ function visitNonCompositeChildren(component, visitor?) {
  * Return the name of a component created by a `ReactElement`-like object.
  */
 function typeName(type) {
-  if (typeof type === "function") {
+  if (typeof type === 'function') {
     return type.displayName || type.name;
   }
   return type;

@@ -1,6 +1,6 @@
 {
   "name": "inferno-redux",
-  "version": "3.10.1",
+  "version": "4.0.0-16",
   "license": "MIT",
   "description": "Official Inferno bindings for Redux",
   "author": {
@@ -12,11 +12,12 @@
   },
   "homepage": "https://github.com/infernojs/inferno#readme",
   "main": "index.js",
-  "inferno:main": "dist/index.es.js",
+  "module": "index.mjs",
+  "dev:module": "dist/index.dev.mjs",
   "typings": "dist/index.d.ts",
   "keywords": [
     "babel",
-    "react",
+    "vdom",
     "inferno",
     "framework",
     "interfaces",
@@ -24,16 +25,19 @@
     "redux"
   ],
   "repository": "https://github.com/infernojs/inferno",
-  "dependencies": {
+  "peerDependencies": {
     "hoist-non-inferno-statics": "^1.1.3",
-    "inferno": "3.10.1",
-    "inferno-component": "3.10.1",
-    "inferno-shared": "3.10.1",
-    "lodash.isplainobject": "^4.0.6",
+    "inferno": ">=4",
     "redux": "^2.0.0 || ^3.0.0"
   },
+  "dependencies": {
+    "hoist-non-inferno-statics": "^1.1.3",
+    "inferno-shared": "4.0.0-16"
+  },
   "devDependencies": {
-    "inferno-create-class": "3.10.1"
+    "inferno-create-class": "4.0.0-16",
+    "inferno-create-element": "4.0.0-16",
+    "redux": "*"
   },
   "rollup": {
     "bundledDependencies": [
@@ -41,8 +45,7 @@
     ],
     "moduleName": "Inferno.Redux",
     "moduleGlobals": {
-      "inferno": "Inferno",
-      "inferno-component": "Inferno.Component"
+      "inferno": "Inferno"
     }
   }
 }

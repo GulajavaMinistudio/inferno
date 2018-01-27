@@ -3,32 +3,34 @@
  */ /** TypeDoc Comment */
 
 import {
+  createComponentVNode,
   createVNode,
   getFlagsForElementVnode,
   InfernoChildren,
+  normalizeChildren,
   VNode
-} from "inferno";
+} from 'inferno';
 import {
   isArray,
   isString,
   isStringOrNumber,
   isUndefined
-} from "inferno-shared";
-import VNodeFlags from "inferno-vnode-flags";
+} from 'inferno-shared';
+import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 
 const classIdSplit = /([.#]?[a-zA-Z0-9_:-]+)/;
 const notClassId = /^\.|#/;
 
 function parseTag(tag: string | null, props: any): string {
   if (!tag) {
-    return "div";
+    return 'div';
   }
   const noId = props && isUndefined(props.id);
   const tagParts = tag.split(classIdSplit);
   let tagName: null | string = null;
 
   if (notClassId.test(tagParts[1])) {
-    tagName = "div";
+    tagName = 'div';
   }
   let classes;
 
@@ -42,12 +44,12 @@ function parseTag(tag: string | null, props: any): string {
 
     if (!tagName) {
       tagName = part;
-    } else if (type === ".") {
+    } else if (type === '.') {
       if (classes === void 0) {
         classes = [];
       }
       classes.push(part.substring(1, part.length));
-    } else if (type === "#" && noId) {
+    } else if (type === '#' && noId) {
       props.id = part.substring(1, part.length);
     }
   }
@@ -55,9 +57,9 @@ function parseTag(tag: string | null, props: any): string {
     if (props.className) {
       classes.push(props.className);
     }
-    props.className = classes.join(" ");
+    props.className = classes.join(' ');
   }
-  return tagName || "div";
+  return tagName || 'div';
 }
 
 function isChildren(x: any): boolean {
@@ -78,17 +80,17 @@ function extractProps(
   let className = null;
 
   for (const prop in _props) {
-    if (isElement && (prop === "className" || prop === "class")) {
+    if (isElement && (prop === 'className' || prop === 'class')) {
       className = _props[prop];
-    } else if (prop === "key") {
+    } else if (prop === 'key') {
       key = _props[prop];
-    } else if (prop === "ref") {
+    } else if (prop === 'ref') {
       ref = _props[prop];
-    } else if (prop === "hooks") {
+    } else if (prop === 'hooks') {
       ref = _props[prop];
-    } else if (prop === "children") {
+    } else if (prop === 'children') {
       children = _props[prop];
-    } else if (!isElement && prop.substr(0, 11) === "onComponent") {
+    } else if (!isElement && prop.substr(0, 11) === 'onComponent') {
       if (!ref) {
         ref = {};
       }
@@ -105,9 +107,10 @@ function extractProps(
  * @param {string|VNode|Function} _tag Name for virtual node
  * @param {object=} _props Additional properties for virtual node
  * @param {string|number|VNode|Array<string|number|VNode>|null=} _children Optional children for virtual node
+ * @param {boolean} noNormalize Set true to avoid normalization process. Tells Inferno to trust the input as is. Used for optimization.
  * @returns {VNode} returns new virtual node
  */
-export default function hyperscript(
+export function h(
   _tag: string | VNode | Function,
   _props?: any,
   _children?: InfernoChildren
@@ -125,24 +128,26 @@ export default function hyperscript(
   );
 
   if (isElement) {
-    return createVNode(
-      getFlagsForElementVnode(tag),
-      tag,
-      className,
-      _children || children,
-      props,
-      key,
-      ref
+    return normalizeChildren(
+      createVNode(
+        getFlagsForElementVnode(tag),
+        tag,
+        className,
+        null,
+        ChildFlags.HasInvalidChildren,
+        props,
+        key,
+        ref
+      ),
+      _children || children
     );
   } else {
     if (children || _children) {
       (props as any).children = children || _children;
     }
-    return createVNode(
+    return createComponentVNode(
       VNodeFlags.ComponentUnknown,
       tag,
-      className,
-      null,
       props,
       key,
       ref

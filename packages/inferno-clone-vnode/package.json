@@ -1,0 +1,40 @@
+{
+  "name": "inferno-clone-vnode",
+  "version": "4.0.0-16",
+  "license": "MIT",
+  "description": "provides helper function to clone Inferno's vNodes",
+  "author": {
+    "name": "Sampo Kivistö",
+    "email": "sampo.kivisto@live.fi"
+  },
+  "bugs": {
+    "url": "https://github.com/infernojs/inferno/issues"
+  },
+  "homepage": "https://github.com/infernojs/inferno#readme",
+  "main": "index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "keywords": [
+    "babel",
+    "react",
+    "inferno",
+    "framework",
+    "interfaces",
+    "user interfaces",
+    "class",
+    "vdom"
+  ],
+  "peerDependencies": {
+    "inferno": ">=4"
+  },
+  "devDependencies": {
+    "inferno": "4.0.0-16",
+    "inferno-shared": "4.0.0-16"
+  },
+  "rollup": {
+    "bundledDependencies": [
+      "inferno-shared"
+    ],
+    "moduleName": "Inferno"
+  }
+}

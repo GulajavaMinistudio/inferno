@@ -1,6 +1,6 @@
 {
   "name": "inferno-vnode-flags",
-  "version": "3.10.1",
+  "version": "4.0.0-16",
   "license": "MIT",
   "description": "Provides an enum of all possible VNode Flags used when calling Inferno.createVNode",
   "author": {
@@ -29,10 +29,10 @@
     "flags"
   ],
   "rollup": {
-    "moduleName": "Inferno.VNodeFlags"
+    "moduleName": "Inferno"
   },
   "main": "index.js",
-  "inferno:main": "dist/index.es.js",
+  "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
   "repository": "https://github.com/infernojs/inferno"
 }

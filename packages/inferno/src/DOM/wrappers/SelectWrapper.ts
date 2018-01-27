@@ -2,21 +2,23 @@
  * @module Inferno
  */ /** TypeDoc Comment */
 
-import { isArray, isInvalid, isNullOrUndef } from "inferno-shared";
-import { isVNode } from "../../core/VNodes";
-import { EMPTY_OBJ } from "../utils";
+import { isArray, isNullOrUndef } from 'inferno-shared';
+import { EMPTY_OBJ } from '../utils/common';
+import { createWrappedFunction } from './wrapper';
+import { ChildFlags } from 'inferno-vnode-flags';
 
 function updateChildOptionGroup(vNode, value) {
   const type = vNode.type;
 
-  if (type === "optgroup") {
+  if (type === 'optgroup') {
     const children = vNode.children;
+    const childFlags = vNode.childFlags;
 
-    if (isArray(children)) {
+    if (childFlags & ChildFlags.MultipleChildren) {
       for (let i = 0, len = children.length; i < len; i++) {
         updateChildOption(children[i], value);
       }
-    } else if (isVNode(children)) {
+    } else if (childFlags & ChildFlags.HasVNodeChildren) {
       updateChildOption(children, value);
     }
   } else {
@@ -25,7 +27,7 @@ function updateChildOptionGroup(vNode, value) {
 }
 
 function updateChildOption(vNode, value) {
-  const props = vNode.props || EMPTY_OBJ;
+  const props: any = vNode.props || EMPTY_OBJ;
   const dom = vNode.dom;
 
   // we do this as multiple may have changed
@@ -40,35 +42,7 @@ function updateChildOption(vNode, value) {
   }
 }
 
-function onSelectChange(e) {
-  const vNode = this.vNode;
-  const props = vNode.props || EMPTY_OBJ;
-  const dom = vNode.dom;
-  const previousValue = props.value;
-
-  if (props.onChange) {
-    const event = props.onChange;
-
-    if (event.event) {
-      event.event(event.data, e);
-    } else {
-      event(e);
-    }
-  } else if (props.onchange) {
-    props.onchange(e);
-  }
-  // the user may have updated the vNode from the above onInput events syncronously
-  // so we need to get it from the context of `this` again
-  const newVNode = this.vNode;
-  const newProps = newVNode.props || EMPTY_OBJ;
-
-  // If render is going async there is no value change yet, it will come back to process input soon
-  if (previousValue !== newProps.value) {
-    // When this happens we need to store current cursor position and restore it, to avoid jumping
-
-    applyValue(newVNode, dom, newProps, false);
-  }
-}
+const onSelectChange = createWrappedFunction('onChange', applyValue);
 
 export function processSelect(
   vNode,
@@ -77,34 +51,37 @@ export function processSelect(
   mounting: boolean,
   isControlled: boolean
 ) {
-  applyValue(vNode, dom, nextPropsOrEmpty, mounting);
+  applyValue(nextPropsOrEmpty, dom, mounting, vNode);
 
   if (isControlled) {
-    dom.vNode = vNode; // TODO: Remove this when implementing Fiber's
+    dom.vNode = vNode;
 
     if (mounting) {
       dom.onchange = onSelectChange;
-      dom.onchange.wrapped = true;
     }
   }
 }
 
-export function applyValue(vNode, dom, nextPropsOrEmpty, mounting: boolean) {
-  if (nextPropsOrEmpty.multiple !== dom.multiple) {
+export function applyValue(nextPropsOrEmpty, dom, mounting: boolean, vNode) {
+  if (
+    !isNullOrUndef(nextPropsOrEmpty.multiple) &&
+    nextPropsOrEmpty.multiple !== dom.multiple
+  ) {
     dom.multiple = nextPropsOrEmpty.multiple;
   }
-  const children = vNode.children;
+  const childFlags = vNode.childFlags;
 
-  if (!isInvalid(children)) {
+  if ((childFlags & ChildFlags.HasInvalidChildren) === 0) {
+    const children = vNode.children;
     let value = nextPropsOrEmpty.value;
     if (mounting && isNullOrUndef(value)) {
       value = nextPropsOrEmpty.defaultValue;
     }
-    if (isArray(children)) {
+    if (childFlags & ChildFlags.MultipleChildren) {
       for (let i = 0, len = children.length; i < len; i++) {
         updateChildOptionGroup(children[i], value);
       }
-    } else if (isVNode(children)) {
+    } else if (childFlags & ChildFlags.HasVNodeChildren) {
       updateChildOptionGroup(children, value);
     }
   }

@@ -2,32 +2,40 @@
  * @module Inferno-Vnode-Flags
  */ /** TypeDoc Comment */
 
-const enum VNodeFlags {
-  Text = 1,
-  HtmlElement = 1 << 1,
-
+/* If editing these values check babel-plugin-also */
+export const enum VNodeFlags {
+  /* First set of bits define shape of vNode */
+  HtmlElement = 1,
+  ComponentUnknown = 1 << 1,
   ComponentClass = 1 << 2,
   ComponentFunction = 1 << 3,
-  ComponentUnknown = 1 << 4,
+  Text = 1 << 4,
 
-  HasKeyedChildren = 1 << 5,
-  HasNonKeyedChildren = 1 << 6,
+  /* Special flags */
+  SvgElement = 1 << 5,
+  InputElement = 1 << 6,
+  TextareaElement = 1 << 7,
+  SelectElement = 1 << 8,
+  Void = 1 << 9,
+  Portal = 1 << 10,
+  ReCreate = 1 << 11,
 
-  SvgElement = 1 << 7,
-  MediaElement = 1 << 8,
-  InputElement = 1 << 9,
-  TextareaElement = 1 << 10,
-  SelectElement = 1 << 11,
-  Void = 1 << 12,
-
+  /* Masks */
   FormElement = InputElement | TextareaElement | SelectElement,
   Element = HtmlElement |
     SvgElement |
-    MediaElement |
     InputElement |
     TextareaElement |
     SelectElement,
   Component = ComponentFunction | ComponentClass | ComponentUnknown
 }
 
-export default VNodeFlags;
+export const enum ChildFlags {
+  /* Second set of bits define shape of children */
+  HasInvalidChildren = 1,
+  HasVNodeChildren = 1 << 1,
+  HasNonKeyedChildren = 1 << 2,
+  HasKeyedChildren = 1 << 3,
+
+  MultipleChildren = HasNonKeyedChildren | HasKeyedChildren
+}
