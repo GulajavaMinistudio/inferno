@@ -10,6 +10,7 @@ describe('Blueprints (JSX)', () => {
   });
 
   afterEach(function() {
+    render(null, container);
     document.body.removeChild(container);
     container = null;
   });
@@ -86,9 +87,7 @@ describe('Blueprints (JSX)', () => {
 
     it('Second render (update)', done => {
       render(<Wrapper />, container);
-      const buttons = Array.prototype.slice.call(
-        container.querySelectorAll('button')
-      );
+      const buttons = Array.prototype.slice.call(container.querySelectorAll('button'));
       buttons.forEach(button => button.click());
 
       // requestAnimationFrame is needed here because

@@ -2,26 +2,9 @@
  * @module Inferno
  */ /** TypeDoc Comment */
 
-import {
-  isBrowser,
-  isFunction,
-  isInvalid,
-  isNullOrUndef,
-  isUndefined,
-  NO_OP,
-  throwError,
-  warning
-} from 'inferno-shared';
+import { isBrowser, isFunction, isInvalid, isNullOrUndef, isUndefined, NO_OP, throwError, warning } from 'inferno-shared';
 import { VNodeFlags } from 'inferno-vnode-flags';
-import {
-  createVNode,
-  directClone,
-  InfernoChildren,
-  InfernoInput,
-  normalizeChildren,
-  options,
-  VNode
-} from '../core/implementation';
+import { createVNode, directClone, InfernoChildren, InfernoInput, normalizeChildren, options, VNode } from '../core/implementation';
 import { hydrateRoot } from './hydration';
 import { mount } from './mounting';
 import { patch } from './patching';
@@ -40,30 +23,27 @@ if (process.env.NODE_ENV !== 'production') {
 
 const documentBody = isBrowser ? document.body : null;
 
-export function render(
-  input: InfernoInput,
-  parentDom:
-    | Element
-    | SVGAElement
-    | DocumentFragment
-    | null
-    | HTMLElement
-    | Node,
-  callback?: Function
-): InfernoChildren {
+export function render(input: InfernoInput, parentDom: Element | SVGAElement | DocumentFragment | HTMLElement | Node, callback?: Function): InfernoChildren {
   // Development warning
   if (process.env.NODE_ENV !== 'production') {
     if (documentBody === parentDom) {
-      throwError(
-        'you cannot render() to the "document.body". Use an empty element as a container instead.'
-      );
+      throwError('you cannot render() to the "document.body". Use an empty element as a container instead.');
     }
   }
   if ((input as string) === NO_OP) {
     return;
   }
   const lifecycle = [];
-  let rootInput = roots.get(parentDom);
+  const rootLen = roots.length;
+  let rootInput;
+  let index;
+
+  for (index = 0; index < rootLen; index++) {
+    if (roots[index] === parentDom) {
+      rootInput = (parentDom as any).$V as VNode;
+      break;
+    }
+  }
 
   if (isUndefined(rootInput)) {
     if (!isInvalid(input)) {
@@ -71,35 +51,22 @@ export function render(
         input = directClone(input as VNode);
       }
       if (!hydrateRoot(input, parentDom as any, lifecycle)) {
-        mount(
-          input as VNode,
-          parentDom as Element,
-          lifecycle,
-          EMPTY_OBJ,
-          false
-        );
+        mount(input as VNode, parentDom as Element, lifecycle, EMPTY_OBJ, false);
       }
-      roots.set(parentDom, input);
+      (parentDom as any).$V = input;
+      roots.push(parentDom);
       rootInput = input;
     }
   } else {
     if (isNullOrUndef(input)) {
       remove(rootInput as VNode, parentDom as Element);
-      roots.delete(parentDom);
+      roots.splice(index, 1);
     } else {
       if ((input as VNode).dom) {
         input = directClone(input as VNode);
       }
-      patch(
-        rootInput as VNode,
-        input as VNode,
-        parentDom as Element,
-        lifecycle,
-        EMPTY_OBJ,
-        false
-      );
-      roots.set(parentDom, input);
-      rootInput = input;
+      patch(rootInput as VNode, input as VNode, parentDom as Element, lifecycle, EMPTY_OBJ, false);
+      rootInput = (parentDom as any).$V = input;
     }
   }
 
@@ -125,17 +92,5 @@ export function createRenderer(parentDom?) {
 }
 
 export function createPortal(children, container) {
-  return normalizeChildren(
-    createVNode(
-      VNodeFlags.Portal,
-      container,
-      null,
-      null,
-      0,
-      null,
-      isInvalid(children) ? null : children.key,
-      null
-    ),
-    children
-  );
+  return normalizeChildren(createVNode(VNodeFlags.Portal, container, null, null, 0, null, isInvalid(children) ? null : children.key, null), children);
 }

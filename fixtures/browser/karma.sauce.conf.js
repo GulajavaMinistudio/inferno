@@ -17,11 +17,6 @@ const customLaunchers = {
     browserName: 'iphone',
     version: '10.3'
   },
-  slSafari7: {
-    base: 'SauceLabs',
-    browserName: 'safari',
-    platform: 'OS X 10.9'
-  },
   slSafari8: {
     base: 'SauceLabs',
     browserName: 'safari',
@@ -87,39 +82,32 @@ const customLaunchers = {
   }
 };
 
-module.exports = function (config) {
+module.exports = function(config) {
   config.set({
     basePath: '../../',
 
     frameworks: ['jasmine', 'jasmine-matchers'],
 
-    files: [
-      require.resolve('es5-shim'),
-      require.resolve('es6-shim'),
-      require.resolve('babel-polyfill/dist/polyfill'),
-      './scripts/test/jasmine-polyfill.js',
-      './scripts/test/globals.js',
-      './packages/*/__tests__/*',
-      './packages/*/__tests__/**/*'
-    ],
+    files: ['./packages/*/__tests__/**/*.spec.js', './packages/*/__tests__/**/*.spec.jsx'],
 
     preprocessors: {
-      './packages/*/__tests__/**/*': ['webpack', 'sourcemap'],
-      './packages/*/__tests__/*': ['webpack', 'sourcemap']
+      './packages/*/__tests__/**/*': ['webpack'],
+      './packages/*/__tests__/*': ['webpack']
     },
 
-    reporters: [
-      'failed',
-      'saucelabs'
-    ],
+    reporters: ['failed', 'saucelabs'],
     sauceLabs: {
       build: 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')',
       tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
       startConnect: false,
-      testName: `InfernoJS`,
+      testName: `InfernoJS`
     },
     customLaunchers: customLaunchers,
     browsers: Object.keys(customLaunchers),
+
+    captureTimeout: 300000,
+    browserNoActivityTimeout: 300000,
+    browserDisconnectTolerance: 2,
 
     browserConsoleLogOptions: {
       level: 'warn',
@@ -135,7 +123,6 @@ module.exports = function (config) {
       noInfo: true
     },
     webpack: {
-      devtool: 'inline-source-map',
       module: {
         rules: [
           {
@@ -143,13 +130,17 @@ module.exports = function (config) {
             loader: 'babel-loader',
             exclude: /node_modules/,
             query: {
-              plugins: ['transform-decorators-legacy']
+              presets: ['stage-2'],
+              plugins: [
+                'transform-decorators-legacy',
+                ['babel-plugin-inferno', { imports: true }],
+                'transform-es2015-modules-commonjs',
+                'transform-class-properties',
+                'transform-object-rest-spread',
+                'babel-plugin-syntax-jsx',
+                'transform-class-properties'
+              ]
             }
-          },
-          {
-            test: /\.jsx?$/,
-            loader: 'babel-loader',
-            include: /lodash/
           },
           {
             test: /\.tsx?$/,
@@ -157,7 +148,8 @@ module.exports = function (config) {
             options: {
               compilerOptions: {
                 target: 'es5',
-                module: 'commonjs'
+                module: 'commonjs',
+                sourceMap: false
               }
             }
           }
@@ -166,6 +158,7 @@ module.exports = function (config) {
       resolve: {
         alias: {
           inferno: resolve('inferno'),
+          'inferno-component': resolve('inferno-component'),
           'inferno-compat': resolve('inferno-compat'),
           'inferno-create-class': resolve('inferno-create-class'),
           'inferno-create-element': resolve('inferno-create-element'),
@@ -181,8 +174,8 @@ module.exports = function (config) {
           'inferno-vnode-flags': resolve('inferno-vnode-flags'),
           'inferno-clone-vnode': resolve('inferno-clone-vnode')
         },
-        extensions: ['.js', '.jsx', '.ts', '.tsx'],
-        mainFields: ['module', 'main']
+        extensions: ['.js', '.jsx', '.ts'],
+        mainFields: ['browser', 'main']
       },
       devServer: {
         noInfo: true

@@ -8,11 +8,30 @@
  */
 
 import React from 'inferno-compat';
-import * as ReactTestUtils from 'inferno-test-utils';
+import { createComponentVNode, render } from 'inferno';
+import { Wrapper } from 'inferno-test-utils';
+import { VNodeFlags } from 'inferno-vnode-flags';
 
 var ReactDOM = React;
 
 describe('Render Select with multiple values', function() {
+  let container;
+
+  function renderIntoDocument(input) {
+    return render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
+  }
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    render(null, container);
+    container.innerHTML = '';
+    document.body.removeChild(container);
+  });
+
   class Component extends React.Component {
     constructor(props, context) {
       super(props, context);
@@ -22,12 +41,7 @@ describe('Render Select with multiple values', function() {
     render() {
       return (
         <div>
-          <select
-            value={this.state.selectedValue}
-            ref="selectNode"
-            id="selectNode"
-            multiple
-          >
+          <select value={this.state.selectedValue} ref="selectNode" id="selectNode" multiple>
             <option value={1}>1</option>
             <option value={2}>2</option>
             <option value={3}>3</option>
@@ -40,7 +54,7 @@ describe('Render Select with multiple values', function() {
   }
 
   it('should mark correct option as selected', function() {
-    var instance = ReactTestUtils.renderIntoDocument(<Component />);
+    var instance = renderIntoDocument(<Component />);
     var root = ReactDOM.findDOMNode(instance);
     expect(root.childNodes[0].options[0].selected).toBe(true);
     expect(root.childNodes[0].options[1].selected).toBe(false);
@@ -50,6 +64,22 @@ describe('Render Select with multiple values', function() {
 });
 
 describe('Render Select with single value', function() {
+  let container;
+  function renderIntoDocument(input) {
+    return render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
+  }
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    render(null, container);
+    container.innerHTML = '';
+    document.body.removeChild(container);
+  });
+
   class Component extends React.Component {
     constructor(props, context) {
       super(props, context);
@@ -59,11 +89,7 @@ describe('Render Select with single value', function() {
     render() {
       return (
         <div>
-          <select
-            value={this.state.selectedValue}
-            ref="selectNode"
-            id="selectNode"
-          >
+          <select value={this.state.selectedValue} ref="selectNode" id="selectNode">
             <option value={1}>1</option>
             <option value={2}>2</option>
             <option value={3}>3</option>
@@ -76,7 +102,7 @@ describe('Render Select with single value', function() {
   }
 
   it('should mark correct option as selected', function() {
-    var instance = ReactTestUtils.renderIntoDocument(<Component />);
+    var instance = renderIntoDocument(<Component />);
     var root = ReactDOM.findDOMNode(instance);
 
     expect(root.childNodes[0].options[0].selected).toBe(false);

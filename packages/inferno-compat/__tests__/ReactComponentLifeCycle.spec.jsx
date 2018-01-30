@@ -8,7 +8,9 @@
  */
 
 import React from 'inferno-compat';
-import * as ReactTestUtils from 'inferno-test-utils';
+import { createComponentVNode, render } from 'inferno';
+import { Wrapper } from 'inferno-test-utils';
+import { VNodeFlags } from 'inferno-vnode-flags';
 
 var ReactDOM = React;
 
@@ -81,6 +83,23 @@ var ComponentLifeCycle = {
  * some cases. Better to just block all updates in initialization.
  */
 describe('ReactComponentLifeCycle', function() {
+  let container;
+
+  function renderIntoDocument(input) {
+    return render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
+  }
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    render(null, container);
+    container.innerHTML = '';
+    document.body.removeChild(container);
+  });
+
   it('should not reuse an instance when it has been unmounted', function() {
     var container = document.createElement('div');
     var StatefulComponent = React.createClass({
@@ -102,7 +121,7 @@ describe('ReactComponentLifeCycle', function() {
    * If a state update triggers rerendering that in turn fires an onDOMReady,
    * that second onDOMReady should not fail.
    */
-  it('it should fire onDOMReady when already in onDOMReady', function() {
+  it('it should fire onDOMReady when already in onDOMReady', function(done) {
     var _testJournal = [];
 
     var Child = React.createClass({
@@ -127,22 +146,15 @@ describe('ReactComponentLifeCycle', function() {
         this.setState({ showHasOnDOMReadyComponent: true });
       },
       render: function() {
-        return (
-          <div>
-            {this.state.showHasOnDOMReadyComponent ? <Child /> : <div> </div>}
-          </div>
-        );
+        return <div>{this.state.showHasOnDOMReadyComponent ? <Child /> : <div> </div>}</div>;
       }
     });
 
     var instance = <SwitcherParent />;
-    instance = ReactTestUtils.renderIntoDocument(instance);
+    renderIntoDocument(instance);
     setTimeout(() => {
-      expect(_testJournal).toEqual([
-        'SwitcherParent:getInitialState',
-        'SwitcherParent:onDOMReady',
-        'Child:onDOMReady'
-      ]);
+      expect(_testJournal).toEqual(['SwitcherParent:getInitialState', 'SwitcherParent:onDOMReady', 'Child:onDOMReady']);
+      done();
     }, 5);
   });
 
@@ -176,7 +188,7 @@ describe('ReactComponentLifeCycle', function() {
     });
     var instance = <StatefulComponent />;
     expect(function() {
-      instance = ReactTestUtils.renderIntoDocument(instance);
+      renderIntoDocument(instance);
     }).not.toThrow();
   });
 
@@ -192,9 +204,7 @@ describe('ReactComponentLifeCycle', function() {
         return <div />;
       }
     });
-    expect(() =>
-      ReactTestUtils.renderIntoDocument(<StatefulComponent />)
-    ).toThrow();
+    expect(() => renderIntoDocument(<StatefulComponent />)).toThrow();
     // expect(console.error.calls.count()).toBe(1);
     // expect(console.error.argsForCall[0][0]).toBe(
     //   'Warning: setState(...): Can only update a mounted or ' +
@@ -221,7 +231,7 @@ describe('ReactComponentLifeCycle', function() {
 
     var element = <Component />;
 
-    var instance = ReactTestUtils.renderIntoDocument(element);
+    var instance = renderIntoDocument(element);
     expect(instance.$LI.children.isMounted()).toBeTruthy();
 
     // expect(console.error.calls.count()).toBe(1);
@@ -247,7 +257,7 @@ describe('ReactComponentLifeCycle', function() {
 
     var element = <Component />;
 
-    var instance = ReactTestUtils.renderIntoDocument(element);
+    var instance = renderIntoDocument(element);
     expect(instance.$LI.children.isMounted()).toBeTruthy();
 
     // expect(console.error.calls.count()).toBe(1);
@@ -494,7 +504,7 @@ describe('ReactComponentLifeCycle', function() {
     ReactDOM.render(<Component text="dos" tooltipText="two" />, container);
   });
 
-  it('should allow state updates in componentDidMount', function() {
+  it('should allow state updates in componentDidMount', function(done) {
     /**
      * calls setState in an componentDidMount.
      */
@@ -511,17 +521,15 @@ describe('ReactComponentLifeCycle', function() {
         return <div />;
       }
     });
-    var instance = (
-      <SetStateInComponentDidMount
-        valueToUseInitially="hello"
-        valueToUseInOnDOMReady="goodbye"
-      />
-    );
-    instance = ReactTestUtils.renderIntoDocument(instance);
+    var instance = <SetStateInComponentDidMount valueToUseInitially="hello" valueToUseInOnDOMReady="goodbye" />;
+    instance = renderIntoDocument(instance);
 
-    setTimeout(() => {
-      expect(instance.$LI.children.state.stateField).toBe('goodbye');
-    }, 5);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        expect(instance.$LI.children.state.stateField).toBe('goodbye');
+        done();
+      }, 5);
+    });
   });
 
   it('should call nested lifecycle methods in the right order', function() {
@@ -565,12 +573,7 @@ describe('ReactComponentLifeCycle', function() {
     var container = document.createElement('div');
     log = [];
     ReactDOM.render(<Outer x={17} />, container);
-    expect(log).toEqual([
-      'outer componentWillMount',
-      'inner componentWillMount',
-      'inner componentDidMount',
-      'outer componentDidMount'
-    ]);
+    expect(log).toEqual(['outer componentWillMount', 'inner componentWillMount', 'inner componentDidMount', 'outer componentDidMount']);
 
     log = [];
     ReactDOM.render(<Outer x={42} />, container);
@@ -587,9 +590,6 @@ describe('ReactComponentLifeCycle', function() {
 
     log = [];
     ReactDOM.unmountComponentAtNode(container);
-    expect(log).toEqual([
-      'outer componentWillUnmount',
-      'inner componentWillUnmount'
-    ]);
+    expect(log).toEqual(['outer componentWillUnmount', 'inner componentWillUnmount']);
   });
 });

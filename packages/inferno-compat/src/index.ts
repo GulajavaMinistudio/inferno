@@ -26,23 +26,9 @@ import {
   VNode
 } from 'inferno';
 import { cloneVNode } from 'inferno-clone-vnode';
-import {
-  ClassicComponentClass,
-  ComponentSpec,
-  createClass
-} from 'inferno-create-class';
+import { ClassicComponentClass, ComponentSpec, createClass } from 'inferno-create-class';
 import { createElement as infernoCreateElement } from 'inferno-create-element';
-import {
-  isArray,
-  isBrowser,
-  isFunction,
-  isInvalid,
-  isNull,
-  isNullOrUndef,
-  isString,
-  NO_OP,
-  throwError
-} from 'inferno-shared';
+import { isArray, isBrowser, isFunction, isInvalid, isNull, isNullOrUndef, isString, NO_OP } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { isValidElement } from './isValidElement';
 import PropTypes from './PropTypes';
@@ -54,12 +40,7 @@ declare global {
   }
 }
 
-const componentToDOMNodeMap = new Map();
-options.findDOMNodeEnabled = true;
-
-function unmountComponentAtNode(
-  container: Element | SVGAElement | DocumentFragment
-): boolean {
+function unmountComponentAtNode(container: Element | SVGAElement | DocumentFragment): boolean {
   render(null, container);
   return true;
 }
@@ -77,11 +58,7 @@ function extend(base, props) {
   return base;
 }
 
-export type IterateChildrenFn = (
-  value: InfernoChildren | any,
-  index: number,
-  array: Array<InfernoChildren | any>
-) => any;
+export type IterateChildrenFn = (value: InfernoChildren | any, index: number, array: Array<InfernoChildren | any>) => any;
 
 function flatten(arr, result) {
   for (let i = 0, len = arr.length; i < len; i++) {
@@ -98,11 +75,7 @@ function flatten(arr, result) {
 const ARR = [];
 
 const Children = {
-  map(
-    children: Array<InfernoChildren | any>,
-    fn: IterateChildrenFn,
-    ctx: any
-  ): any[] {
+  map(children: Array<InfernoChildren | any>, fn: IterateChildrenFn, ctx: any): any[] {
     if (isNullOrUndef(children)) {
       return children;
     }
@@ -112,11 +85,7 @@ const Children = {
     }
     return children.map(fn);
   },
-  forEach(
-    children: Array<InfernoChildren | any>,
-    fn: IterateChildrenFn,
-    ctx?: any
-  ): void {
+  forEach(children: Array<InfernoChildren | any>, fn: IterateChildrenFn, ctx?: any): void {
     if (isNullOrUndef(children)) {
       return;
     }
@@ -141,9 +110,7 @@ const Children = {
     }
     return children[0];
   },
-  toArray(
-    children: Array<InfernoChildren | any>
-  ): Array<InfernoChildren | any> {
+  toArray(children: Array<InfernoChildren | any>): Array<InfernoChildren | any> {
     if (isNullOrUndef(children)) {
       return [];
     }
@@ -172,24 +139,7 @@ options.afterRender = function(): void {
 };
 const nextAfterMount = options.afterMount;
 
-// React returns null when Component rendered nothing, we need to mimic this behavior
-// In Inferno Component returns empty text as placeholder
-function getDOMIgnoreVoid(vNode) {
-  let dom = null;
-
-  if (vNode.children && vNode.children.flags & VNodeFlags.Void) {
-    dom = null;
-  } else {
-    dom = vNode.dom;
-  }
-
-  return dom;
-}
-
 options.afterMount = vNode => {
-  if (options.findDOMNodeEnabled) {
-    componentToDOMNodeMap.set(vNode.children, getDOMIgnoreVoid(vNode));
-  }
   if (nextAfterMount) {
     nextAfterMount(vNode);
   }
@@ -197,9 +147,6 @@ options.afterMount = vNode => {
 const nextAfterUpdate = options.afterUpdate;
 
 options.afterUpdate = vNode => {
-  if (options.findDOMNodeEnabled) {
-    componentToDOMNodeMap.set(vNode.children, getDOMIgnoreVoid(vNode));
-  }
   if (nextAfterUpdate) {
     nextAfterUpdate(vNode);
   }
@@ -208,9 +155,6 @@ options.afterUpdate = vNode => {
 const nextBeforeUnmount = options.beforeUnmount;
 
 options.beforeUnmount = vNode => {
-  if (options.findDOMNodeEnabled) {
-    componentToDOMNodeMap.delete(vNode.children);
-  }
   if (nextBeforeUnmount) {
     nextBeforeUnmount(vNode);
   }
@@ -219,11 +163,7 @@ options.beforeUnmount = vNode => {
 const version = '15.4.2';
 
 function normProps(name: string, props: Props | any) {
-  if (
-    (name === 'input' || name === 'textarea') &&
-    props.type !== 'radio' &&
-    props.onChange
-  ) {
+  if ((name === 'input' || name === 'textarea') && props.type !== 'radio' && props.onChange) {
     const type = props.type;
     let eventName;
 
@@ -297,12 +237,7 @@ const injectStringRefs = function(originalFunction) {
     if (hasSymbolSupport) {
       for (let i = 0, len = children.length; i < len; i++) {
         const child = children[i];
-        if (
-          child &&
-          !isArray(child) &&
-          !isString(child) &&
-          isFunction(child[symbolIterator])
-        ) {
+        if (child && !isArray(child) && !isString(child) && isFunction(child[symbolIterator])) {
           children[i] = iterableToArray(child[symbolIterator]());
         }
       }
@@ -379,9 +314,7 @@ function shallowDiffers(a, b): boolean {
 
 class PureComponent<P, S> extends Component<P, S> {
   public shouldComponentUpdate(props, state) {
-    return (
-      shallowDiffers(this.props, props) || shallowDiffers(this.state, state)
-    );
+    return shallowDiffers(this.props, props) || shallowDiffers(this.state, state);
   }
 }
 
@@ -396,20 +329,11 @@ class WrapperComponent<P, S> extends Component<P, S> {
   }
 }
 
-function unstable_renderSubtreeIntoContainer(
-  parentComponent,
-  vNode,
-  container,
-  callback
-) {
-  const wrapperVNode: VNode = createComponentVNode(
-    VNodeFlags.ComponentClass,
-    WrapperComponent,
-    {
-      children: vNode,
-      context: parentComponent.context
-    }
-  );
+function unstable_renderSubtreeIntoContainer(parentComponent, vNode, container, callback) {
+  const wrapperVNode: VNode = createComponentVNode(VNodeFlags.ComponentClass, WrapperComponent, {
+    children: vNode,
+    context: parentComponent.context
+  });
   render(wrapperVNode, container);
   const component = vNode.children;
 
@@ -435,17 +359,11 @@ for (let i = ELEMENTS.length; i--; ) {
 }
 
 function findDOMNode(ref) {
-  if (!options.findDOMNodeEnabled) {
-    if (process.env.NODE_ENV !== 'production') {
-      throwError(
-        'findDOMNode() has been disabled, use Inferno.options.findDOMNodeEnabled = true; enabled findDOMNode(). Warning this can significantly impact performance!'
-      );
-    }
-    throwError();
+  if (ref && ref.nodeType) {
+    return ref;
   }
-  const dom = ref && ref.nodeType ? ref : null;
 
-  return componentToDOMNodeMap.has(ref) ? componentToDOMNodeMap.get(ref) : dom;
+  return ref.$UN ? null : ref.$LI.dom || ref;
 }
 
 // Mask React global in browser enviornments when React is not used.

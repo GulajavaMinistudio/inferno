@@ -3,8 +3,7 @@
  */ /** TypeDoc Comment */
 
 export const NO_OP = '$NO_OP';
-export const ERROR_MSG =
-  'a runtime error occured! Use Inferno in development environment to find the error.';
+export const ERROR_MSG = 'a runtime error occured! Use Inferno in development environment to find the error.';
 
 // This should be boolean and not reference to window.document
 export const isBrowser = !!(typeof window !== 'undefined' && window.document);
@@ -53,6 +52,10 @@ export function isTrue(o: any): o is true {
 
 export function isUndefined(o: any): o is undefined {
   return o === void 0;
+}
+
+export function isDefined(o: any) {
+  return o !== void 0;
 }
 
 export function isObject(o: any): o is object {

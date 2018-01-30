@@ -2,16 +2,7 @@
  * @module Inferno-Mobx
  */ /** TypeDoc Comment */
 
-import {
-  componentByNodeRegistery,
-  errorsReporter,
-  inject,
-  Observer,
-  observer,
-  renderReporter,
-  trackComponents,
-  useStaticRendering
-} from './observer';
+import { errorsReporter, inject, Observer, observer, renderReporter, trackComponents, useStaticRendering } from './observer';
 import { Provider } from './Provider';
 import { EventEmitter } from './utils/EventEmitter';
 
@@ -22,7 +13,6 @@ import { EventEmitter } from './utils/EventEmitter';
 const onError = fn => errorsReporter.on(fn);
 
 export {
-  componentByNodeRegistery,
   errorsReporter,
   inject,
   observer,

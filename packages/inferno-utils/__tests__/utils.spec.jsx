@@ -1,36 +1,34 @@
 import { render } from 'inferno';
-import { renderToString } from 'inferno-server';
-import {
-  createContainerWithHTML,
-  createStyler,
-  innerHTML,
-  sortAttributes,
-  style,
-  triggerEvent,
-  validateNodeTree
-} from 'inferno-utils';
+import { createContainerWithHTML, createStyler, innerHTML, sortAttributes, style, triggerEvent, validateNodeTree } from 'inferno-utils';
 import sinon from 'sinon';
 
-const styleStringToArray = styleString =>
-  styleString.split(';').map(s => s.trim());
+function styleStringToArray(styleString) {
+  const splittedWords = styleString.split(';');
+  const arr = [];
+
+  for (let i = 0; i < splittedWords.length; i++) {
+    const word = splittedWords[i].trim();
+
+    if (word !== '') {
+      arr.push(word);
+    }
+  }
+
+  return arr.sort();
+}
 
 describe('Utils', () => {
   describe('sortAttributes', () => {
     it('should return sorted attributes on HTML strings', () => {
       expect(
-        sortAttributes(
-          '<div zAttribute="test" aAttribute="inferno" bAttribute="running">Inferno <span fAttribute="huh" cAttr="last">is cool!</span></div>'
-        )
-      ).toBe(
-        '<div aAttribute="inferno" bAttribute="running" zAttribute="test">Inferno <span cAttr="last" fAttribute="huh">is cool!</span></div>'
-      );
+        sortAttributes('<div zAttribute="test" aAttribute="inferno" bAttribute="running">Inferno <span fAttribute="huh" cAttr="last">is cool!</span></div>')
+      ).toBe('<div aAttribute="inferno" bAttribute="running" zAttribute="test">Inferno <span cAttr="last" fAttribute="huh">is cool!</span></div>');
     });
   });
 
   describe('innerHTML', () => {
     it('should return the correct innerHTML', () => {
-      const testHTML =
-        '<div>Hello World <a href="//test.com/">test link</a></div>';
+      const testHTML = '<div>Hello World <a href="//test.com/">test link</a></div>';
 
       expect(innerHTML(testHTML)).toBe(testHTML);
     });
@@ -54,9 +52,7 @@ describe('Utils', () => {
 			`;
       const validCSS = 'position: relative; right: 10px;';
 
-      expect(styleStringToArray(createStyler(CSS))).toEqual(
-        styleStringToArray(validCSS)
-      );
+      expect(styleStringToArray(createStyler(CSS))).toEqual(styleStringToArray(validCSS));
     });
   });
 
@@ -78,9 +74,7 @@ describe('Utils', () => {
 				right: 10px;
 			`;
 
-      expect(styleStringToArray(style(CSS))).toEqual(
-        styleStringToArray(createStyler(CSS))
-      );
+      expect(styleStringToArray(style(CSS))).toEqual(styleStringToArray(createStyler(CSS)));
     });
   });
 
@@ -104,18 +98,6 @@ describe('Utils', () => {
 
     it('should return true if called with a number', () => {
       expect(validateNodeTree(4)).toBe(true);
-    });
-
-    it('should return true on a valid node tree', () => {
-      const node = (
-        <div>
-          <span>Hello world</span>
-        </div>
-      );
-      const html = renderToString(node);
-      const container = createContainerWithHTML(html);
-      render(node, container);
-      expect(validateNodeTree(node)).toBe(true);
     });
   });
 
@@ -141,13 +123,11 @@ describe('Utils', () => {
           expect(cancelable).toBe(true);
         }
       };
-      spyCreateMouseEvent = sinon
-        .stub(document, 'createEvent')
-        .callsFake(eventInterface => {
-          expect(eventInterface).toBe(triggeredEventType);
+      spyCreateMouseEvent = sinon.stub(document, 'createEvent').callsFake(eventInterface => {
+        expect(eventInterface).toBe(triggeredEventType);
 
-          return event;
-        });
+        return event;
+      });
 
       triggerEvent(triggerName, element);
 
@@ -165,13 +145,11 @@ describe('Utils', () => {
           expect(cancelable).toBe(true);
         }
       };
-      spyCreateMouseEvent = sinon
-        .stub(document, 'createEvent')
-        .callsFake(eventInterface => {
-          expect(eventInterface).toBe(triggeredEventType);
+      spyCreateMouseEvent = sinon.stub(document, 'createEvent').callsFake(eventInterface => {
+        expect(eventInterface).toBe(triggeredEventType);
 
-          return event;
-        });
+        return event;
+      });
 
       triggerEvent(triggerName, element);
 
@@ -189,13 +167,11 @@ describe('Utils', () => {
           expect(cancelable).toBe(true);
         }
       };
-      spyCreateMouseEvent = sinon
-        .stub(document, 'createEvent')
-        .callsFake(eventInterface => {
-          expect(eventInterface).toBe(triggeredEventType);
+      spyCreateMouseEvent = sinon.stub(document, 'createEvent').callsFake(eventInterface => {
+        expect(eventInterface).toBe(triggeredEventType);
 
-          return event;
-        });
+        return event;
+      });
 
       triggerEvent(triggerName, element);
 
@@ -213,13 +189,11 @@ describe('Utils', () => {
           expect(cancelable).toBe(true);
         }
       };
-      spyCreateMouseEvent = sinon
-        .stub(document, 'createEvent')
-        .callsFake(eventInterface => {
-          expect(eventInterface).toBe(triggeredEventType);
+      spyCreateMouseEvent = sinon.stub(document, 'createEvent').callsFake(eventInterface => {
+        expect(eventInterface).toBe(triggeredEventType);
 
-          return event;
-        });
+        return event;
+      });
 
       triggerEvent(triggerName, element);
 
@@ -237,13 +211,11 @@ describe('Utils', () => {
           expect(cancelable).toBe(true);
         }
       };
-      spyCreateMouseEvent = sinon
-        .stub(document, 'createEvent')
-        .callsFake(eventInterface => {
-          expect(eventInterface).toBe(triggeredEventType);
+      spyCreateMouseEvent = sinon.stub(document, 'createEvent').callsFake(eventInterface => {
+        expect(eventInterface).toBe(triggeredEventType);
 
-          return event;
-        });
+        return event;
+      });
 
       triggerEvent(triggerName, element);
 
@@ -261,13 +233,11 @@ describe('Utils', () => {
           expect(cancelable).toBe(true);
         }
       };
-      spyCreateMouseEvent = sinon
-        .stub(document, 'createEvent')
-        .callsFake(eventInterface => {
-          expect(eventInterface).toBe(triggeredEventType);
+      spyCreateMouseEvent = sinon.stub(document, 'createEvent').callsFake(eventInterface => {
+        expect(eventInterface).toBe(triggeredEventType);
 
-          return event;
-        });
+        return event;
+      });
 
       triggerEvent(triggerName, element);
 
@@ -285,13 +255,11 @@ describe('Utils', () => {
           expect(cancelable).toBe(true);
         }
       };
-      spyCreateMouseEvent = sinon
-        .stub(document, 'createEvent')
-        .callsFake(eventInterface => {
-          expect(eventInterface).toBe(triggeredEventType);
+      spyCreateMouseEvent = sinon.stub(document, 'createEvent').callsFake(eventInterface => {
+        expect(eventInterface).toBe(triggeredEventType);
 
-          return event;
-        });
+        return event;
+      });
 
       triggerEvent(triggerName, element);
 
@@ -309,13 +277,11 @@ describe('Utils', () => {
           expect(cancelable).toBe(true);
         }
       };
-      spyCreateMouseEvent = sinon
-        .stub(document, 'createEvent')
-        .callsFake(eventInterface => {
-          expect(eventInterface).toBe(triggeredEventType);
+      spyCreateMouseEvent = sinon.stub(document, 'createEvent').callsFake(eventInterface => {
+        expect(eventInterface).toBe(triggeredEventType);
 
-          return event;
-        });
+        return event;
+      });
 
       triggerEvent(triggerName, element);
 
@@ -326,9 +292,7 @@ describe('Utils', () => {
     it('should throw an error on unknown event', () => {
       const triggerName = 'blah';
 
-      expect(
-        triggerEvent.bind(triggerEvent, triggerName, element)
-      ).toThrowError(Error);
+      expect(triggerEvent.bind(triggerEvent, triggerName, element)).toThrowError(Error);
     });
   });
 });

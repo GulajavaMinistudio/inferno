@@ -9,10 +9,7 @@ module.exports = function(config) {
 
     detectBrowsers: {
       postDetection(browserList) {
-        const results =
-          browserList.indexOf('PhantomJS') && browserList.length === 1
-            ? ['PhantomJS']
-            : [];
+        const results = [];
 
         if (browserList.indexOf('Chrome') > -1) {
           results.push('Chrome');
@@ -22,33 +19,32 @@ module.exports = function(config) {
           results.push('Firefox');
         }
 
+        if (browserList.indexOf('IE') > -1) {
+          results.push('IE');
+        }
+
+        if (browserList.indexOf('Edge')) {
+          results.push('Edge');
+        }
+
         return results;
       }
     },
 
-    files: [
-      require.resolve('es5-shim'),
-      require.resolve('es6-shim'),
-      require.resolve('babel-polyfill/dist/polyfill'),
-      './scripts/test/jasmine-polyfill.js',
-      './scripts/test/globals.js',
-      './packages/*/__tests__/*',
-      './packages/*/__tests__/**/*'
-    ],
+    files: ['./packages/*/__tests__/**/*.spec.js', './packages/*/__tests__/**/*.spec.jsx'],
 
     preprocessors: {
-      './packages/*/__tests__/**/*': ['webpack', 'sourcemap'],
-      './packages/*/__tests__/*': ['webpack', 'sourcemap']
+      './packages/*/__tests__/**/*': ['webpack'],
+      './packages/*/__tests__/*': ['webpack']
     },
 
-    reporters: [process.env.CI ? 'failed' : 'progress'],
+    reporters: ['progress'],
 
     browserConsoleLogOptions: {
       level: 'warn',
       terminal: false
     },
     colors: true,
-    singleRun: true,
     autoWatch: false,
     concurrency: 1,
 
@@ -57,7 +53,6 @@ module.exports = function(config) {
       noInfo: true
     },
     webpack: {
-      devtool: 'inline-source-map',
       module: {
         rules: [
           {
@@ -65,13 +60,17 @@ module.exports = function(config) {
             loader: 'babel-loader',
             exclude: /node_modules/,
             query: {
-              plugins: ['transform-decorators-legacy']
+              presets: ['stage-2'],
+              plugins: [
+                'transform-decorators-legacy',
+                ['babel-plugin-inferno', { imports: true }],
+                'transform-es2015-modules-commonjs',
+                'transform-class-properties',
+                'transform-object-rest-spread',
+                'babel-plugin-syntax-jsx',
+                'transform-class-properties'
+              ]
             }
-          },
-          {
-            test: /\.jsx?$/,
-            loader: 'babel-loader',
-            include: /lodash/
           },
           {
             test: /\.tsx?$/,
@@ -79,7 +78,8 @@ module.exports = function(config) {
             options: {
               compilerOptions: {
                 target: 'es5',
-                module: 'commonjs'
+                module: 'commonjs',
+                sourceMap: false
               }
             }
           }
@@ -88,6 +88,7 @@ module.exports = function(config) {
       resolve: {
         alias: {
           inferno: resolve('inferno'),
+          'inferno-component': resolve('inferno-component'),
           'inferno-compat': resolve('inferno-compat'),
           'inferno-create-class': resolve('inferno-create-class'),
           'inferno-create-element': resolve('inferno-create-element'),
@@ -103,8 +104,8 @@ module.exports = function(config) {
           'inferno-vnode-flags': resolve('inferno-vnode-flags'),
           'inferno-clone-vnode': resolve('inferno-clone-vnode')
         },
-        extensions: ['.js', '.jsx', '.ts', '.tsx'],
-        mainFields: ['module', 'main']
+        extensions: ['.js', '.jsx', '.ts'],
+        mainFields: ['browser', 'main']
       },
       devServer: {
         noInfo: true

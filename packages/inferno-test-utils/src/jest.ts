@@ -2,9 +2,10 @@
  * @module Inferno-Test-Utils
  */ /** TypeDoc Comment */
 
-import { VNode } from 'inferno';
+import { createComponentVNode, render, VNode } from 'inferno';
 import { isArray, isNull, isObject, isString } from 'inferno-shared';
-import { getTagNameOfVNode, isDOMVNode, renderIntoDocument } from './utils';
+import { getTagNameOfVNode, isDOMVNode, Wrapper } from './utils';
+import { VNodeFlags } from 'inferno-vnode-flags';
 
 // Jest Snapshot Utilities
 // Jest formats it's snapshots prettily because it knows how to play with the React test renderer.
@@ -12,8 +13,15 @@ import { getTagNameOfVNode, isDOMVNode, renderIntoDocument } from './utils';
 // https://github.com/facebook/react/blob/v15.4.2/src/renderers/testing/ReactTestRenderer.js#L98
 
 function createSnapshotObject(object: object) {
+  let value;
+  if (typeof Symbol === 'undefined') {
+    value = 'react.test.json';
+  } else {
+    value = Symbol.for('react.test.json');
+  }
+
   Object.defineProperty(object, '$$typeof', {
-    value: Symbol.for('react.test.json')
+    value
   });
 
   return object;
@@ -70,7 +78,7 @@ export function vNodeToSnapshot(node: VNode) {
 }
 
 export function renderToSnapshot(input: VNode) {
-  const wrapper = renderIntoDocument(input);
+  const wrapper = render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), document.createElement('div')) as any;
   const vnode = wrapper.props.children;
 
   if (!isNull(wrapper.props)) {

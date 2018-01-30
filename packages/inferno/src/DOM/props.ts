@@ -2,29 +2,12 @@
  * @module Inferno
  */ /** TypeDoc Comment */
 
-import {
-  booleanProps,
-  delegatedEvents,
-  isUnitlessNumber,
-  namespaces,
-  skipProps,
-  strictProps
-} from './constants';
-import {
-  isFunction,
-  isNull,
-  isNullOrUndef,
-  isNumber,
-  isString,
-  throwError
-} from 'inferno-shared';
+import { booleanProps, delegatedEvents, isUnitlessNumber, namespaces, skipProps, strictProps } from './constants';
+import { isDefined, isFunction, isNull, isNullOrUndef, isNumber, isString, throwError } from 'inferno-shared';
 import { handleEvent } from './events/delegation';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { isSameInnerHTML } from './utils/innerhtml';
-import {
-  isControlledFormElement,
-  processElement
-} from './wrappers/processElement';
+import { addFormElementEventHandlers, isControlledFormElement, processElement } from './wrappers/processElement';
 import { unmount, unmountAllChildren } from './unmounting';
 import { VNode } from 'inferno';
 
@@ -49,9 +32,7 @@ export function patchEvent(name: string, lastValue, nextValue, dom) {
     } else {
       // Development warning
       if (process.env.NODE_ENV !== 'production') {
-        throwError(
-          `an event on a VNode "${name}". was not a function or a valid linkEvent.`
-        );
+        throwError(`an event on a VNode "${name}". was not a function or a valid linkEvent.`);
       }
     }
   } else {
@@ -80,10 +61,7 @@ function patchStyle(lastAttrValue, nextAttrValue, dom) {
       // do not add a hasOwnProperty check here, it affects performance
       value = nextAttrValue[style];
       if (value !== lastAttrValue[style]) {
-        domStyle[style] =
-          !isNumber(value) || isUnitlessNumber.has(style)
-            ? value
-            : value + 'px';
+        domStyle[style] = !isNumber(value) || isDefined(isUnitlessNumber[style]) ? value : value + 'px';
       }
     }
 
@@ -95,30 +73,21 @@ function patchStyle(lastAttrValue, nextAttrValue, dom) {
   } else {
     for (style in nextAttrValue) {
       value = nextAttrValue[style];
-      domStyle[style] =
-        !isNumber(value) || isUnitlessNumber.has(style) ? value : value + 'px';
+      domStyle[style] = !isNumber(value) || isDefined(isUnitlessNumber[style]) ? value : value + 'px';
     }
   }
 }
 
-export function patchProp(
-  prop,
-  lastValue,
-  nextValue,
-  dom: Element,
-  isSVG: boolean,
-  hasControlledValue: boolean,
-  lastVNode: VNode | null
-) {
+export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boolean, hasControlledValue: boolean, lastVNode: VNode | null) {
   if (lastValue !== nextValue) {
-    if (delegatedEvents.has(prop)) {
+    if (isDefined(delegatedEvents[prop])) {
       handleEvent(prop, nextValue, dom);
-    } else if (skipProps.has(prop) || (hasControlledValue && prop === 'value')) {
+    } else if (isDefined(skipProps[prop]) || (hasControlledValue && prop === 'value')) {
       return;
-    } else if (booleanProps.has(prop)) {
+    } else if (isDefined(booleanProps[prop])) {
       prop = prop === 'autoFocus' ? prop.toLowerCase() : prop;
       dom[prop] = !!nextValue;
-    } else if (strictProps.has(prop)) {
+    } else if (isDefined(strictProps[prop])) {
       const value = isNullOrUndef(nextValue) ? '' : nextValue;
 
       if (dom[prop] !== value) {
@@ -126,7 +95,7 @@ export function patchProp(
       }
     } else if (isAttrAnEvent(prop)) {
       patchEvent(prop, lastValue, nextValue, dom);
-    }  else if (isNullOrUndef(nextValue)) {
+    } else if (isNullOrUndef(nextValue)) {
       dom.removeAttribute(prop);
     } else if (prop === 'style') {
       patchStyle(lastValue, nextValue, dom);
@@ -148,10 +117,10 @@ export function patchProp(
           dom.innerHTML = nextHtml;
         }
       }
-    } else if (isSVG && namespaces.has(prop)) {
+    } else if (isSVG && namespaces[prop]) {
       // We optimize for NS being boolean. Its 99.9% time false
       // If we end up in this path we can read property again
-      dom.setAttributeNS(namespaces.get(prop) as string, prop, nextValue);
+      dom.setAttributeNS(namespaces[prop] as string, prop, nextValue);
     } else {
       dom.setAttribute(prop, nextValue);
     }
@@ -159,10 +128,13 @@ export function patchProp(
 }
 
 export function mountProps(vNode, flags, props, dom, isSVG) {
-  let hasControlledValue = false;
+  let hasControlledValue: boolean = false;
   const isFormElement = (flags & VNodeFlags.FormElement) > 0;
   if (isFormElement) {
     hasControlledValue = isControlledFormElement(props);
+    if (hasControlledValue) {
+      addFormElementEventHandlers(flags, dom, props);
+    }
   }
   for (const prop in props) {
     // do not add a hasOwnProperty check here, it affects performance
