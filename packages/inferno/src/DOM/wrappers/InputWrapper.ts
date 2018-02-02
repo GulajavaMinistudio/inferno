@@ -1,7 +1,3 @@
-/**
- * @module Inferno
- */ /** TypeDoc Comment */
-
 import { isNullOrUndef } from 'inferno-shared';
 import { createWrappedFunction } from './wrapper';
 
@@ -14,7 +10,9 @@ const onTextInputChange = createWrappedFunction('onInput', applyValueInput);
 const wrappedOnChange = createWrappedFunction(['onClick', 'onChange'], applyValueInput);
 
 /* tslint:disable-next-line:no-empty */
-function emptywrapper() {}
+function emptywrapper(event) {
+  event.stopPropagation();
+}
 (emptywrapper as any).wrapped = true;
 
 export function inputEvents(dom, nextPropsOrEmpty) {

@@ -1,7 +1,3 @@
-/**
- * @module Inferno
- */ /** TypeDoc Comment */
-
 import { isFunction, isNull, isNullOrUndef, isObject, isString, isStringOrNumber, throwError } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { createVoidVNode, directClone, options, VNode } from '../core/implementation';
@@ -125,7 +121,7 @@ export function mountComponent(vNode: VNode, parentDom: Element | null, lifecycl
   const ref = vNode.ref;
 
   if (isClass) {
-    const instance = createClassComponentInstance(vNode, type, props, context, lifecycle);
+    const instance = createClassComponentInstance(vNode, type, props, context);
     const input = instance.$LI;
     vNode.dom = dom = mount(input, null, lifecycle, instance.$CX, isSVG);
     mountClassComponentCallbacks(vNode, ref, instance, lifecycle);

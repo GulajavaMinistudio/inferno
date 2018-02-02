@@ -23,7 +23,7 @@ module.exports = function(config) {
           results.push('IE');
         }
 
-        if (browserList.indexOf('Edge')) {
+        if (browserList.indexOf('Edge') > -1) {
           results.push('Edge');
         }
 
@@ -38,6 +38,17 @@ module.exports = function(config) {
       './packages/*/__tests__/*': ['webpack']
     },
 
+    plugins: [
+      'karma-ie-launcher',
+      'karma-detect-browsers',
+      'karma-jasmine',
+      'karma-jasmine-matchers',
+      'karma-firefox-launcher',
+      'karma-webpack',
+      'karma-chrome-launcher',
+      'karma-edge-launcher'
+    ],
+    
     reporters: ['progress'],
 
     browserConsoleLogOptions: {

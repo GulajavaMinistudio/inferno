@@ -17,6 +17,11 @@ const customLaunchers = {
     browserName: 'iphone',
     version: '10.3'
   },
+  slIphone7: {
+    base: 'SauceLabs',
+    browserName: 'iphone',
+    version: '11'
+  },
   slSafari8: {
     base: 'SauceLabs',
     browserName: 'safari',
@@ -26,6 +31,16 @@ const customLaunchers = {
     base: 'SauceLabs',
     browserName: 'safari',
     platform: 'OS X 10.11'
+  },
+  sl_mac_firfox: {
+    base: 'SauceLabs',
+    browserName: 'firefox',
+    platform: 'OS X 10.12'
+  },
+  sl_safari: {
+    base: 'SauceLabs',
+    browserName: 'safari',
+    platform: 'OS X 10.12'
   },
   slIE9: {
     base: 'SauceLabs',
@@ -45,6 +60,12 @@ const customLaunchers = {
     platform: 'Windows 7',
     version: '11'
   },
+  slEdge13: {
+    base: 'SauceLabs',
+    browserName: 'MicrosoftEdge',
+    version: '13',
+    platform: 'Windows 10'
+  },
   slEdge14: {
     base: 'SauceLabs',
     browserName: 'MicrosoftEdge',
@@ -62,6 +83,11 @@ const customLaunchers = {
     browserName: 'MicrosoftEdge',
     platform: 'Windows 10'
   },
+  sl_mac_chrome: {
+    base: 'SauceLabs',
+    browserName: 'chrome',
+    platform: 'macOS 10.12'
+  },
   slChrome: {
     base: 'SauceLabs',
     browserName: 'chrome'
@@ -75,10 +101,10 @@ const customLaunchers = {
     browserName: 'android',
     version: '5.1'
   },
-  slAndroid4: {
+  slAndroid7: {
     base: 'SauceLabs',
     browserName: 'android',
-    version: '4.4'
+    version: '6.0'
   }
 };
 
@@ -100,8 +126,24 @@ module.exports = function(config) {
       build: 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')',
       tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
       startConnect: false,
-      testName: `InfernoJS`
+      testName: `InfernoJS`,
+      recordVideo: false,
+      recordScreenshots: false,
+      videoUploadOnPass: false,
+      recordLogs: false,
+      captureHtml: false,
+      commandTimeout: 400,
+
     },
+
+    plugins: [
+      'karma-jasmine',
+      'karma-jasmine-matchers',
+      'karma-webpack',
+      'karma-failed-reporter',
+      'karma-sauce-launcher'
+    ],
+
     customLaunchers: customLaunchers,
     browsers: Object.keys(customLaunchers),
 

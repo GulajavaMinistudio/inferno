@@ -1,7 +1,3 @@
-/**
- * @module Inferno
- */ /** TypeDoc Comment */
-
 import { isFunction, isNull, isNullOrUndef, isString, throwError, warning } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { VNode } from '../core/implementation';
@@ -17,7 +13,7 @@ function hydrateComponent(vNode: VNode, dom: Element, lifecycle: Function[], con
   const props = vNode.props || EMPTY_OBJ;
 
   if (isClass) {
-    const instance = createClassComponentInstance(vNode, type, props, context, lifecycle);
+    const instance = createClassComponentInstance(vNode, type, props, context);
     const input = instance.$LI;
 
     hydrate(input, dom, lifecycle, instance.$CX, isSVG);

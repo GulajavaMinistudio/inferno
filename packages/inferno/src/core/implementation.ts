@@ -1,7 +1,3 @@
-/**
- * @module Inferno
- */ /** TypeDoc Comment */
-
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import {
   isArray,
@@ -309,7 +305,7 @@ export function normalizeChildren(vNode, children) {
         } else {
           const key = n.key;
           const isNullDom = isNull(n.dom);
-          const isNullKey = isNullOrUndef(key);
+          const isNullKey = isNull(key);
           const isPrefixed = !isNullKey && key[0] === keyPrefix;
 
           if (!isNullDom || isNullKey || isPrefixed) {
@@ -355,7 +351,6 @@ export const options: {
   beforeRender: null | Function;
   beforeUnmount: null | Function;
   createVNode: null | Function;
-  findDOMNodeEnabled: boolean;
   roots: any[];
 } = {
   afterMount: null,
@@ -364,6 +359,5 @@ export const options: {
   beforeRender: null,
   beforeUnmount: null,
   createVNode: null,
-  findDOMNodeEnabled: false,
   roots: []
 };

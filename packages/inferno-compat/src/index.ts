@@ -1,8 +1,3 @@
-/**
- * @module Inferno-Compat
- */
-/** TypeDoc Comment */
-
 import {
   Component,
   createComponentVNode,
@@ -15,7 +10,7 @@ import {
   getFlagsForElementVnode,
   InfernoChildren,
   InfernoInput,
-  isUnitlessNumber,
+  getNumberStyleValue,
   linkEvent,
   normalizeChildren,
   normalizeProps,
@@ -136,28 +131,6 @@ options.beforeRender = function(component): void {
 };
 options.afterRender = function(): void {
   currentComponent = null;
-};
-const nextAfterMount = options.afterMount;
-
-options.afterMount = vNode => {
-  if (nextAfterMount) {
-    nextAfterMount(vNode);
-  }
-};
-const nextAfterUpdate = options.afterUpdate;
-
-options.afterUpdate = vNode => {
-  if (nextAfterUpdate) {
-    nextAfterUpdate(vNode);
-  }
-};
-
-const nextBeforeUnmount = options.beforeUnmount;
-
-options.beforeUnmount = vNode => {
-  if (nextBeforeUnmount) {
-    nextBeforeUnmount(vNode);
-  }
 };
 
 const version = '15.4.2';
@@ -321,7 +294,7 @@ class PureComponent<P, S> extends Component<P, S> {
 class WrapperComponent<P, S> extends Component<P, S> {
   public getChildContext() {
     // tslint:disable-next-line
-    return this.props['context'];
+    return this.props.contex;
   }
 
   public render(props) {
@@ -390,7 +363,7 @@ if (isBrowser && typeof (window as any).React === 'undefined') {
     directClone,
     findDOMNode,
     getFlagsForElementVnode,
-    isUnitlessNumber,
+    getNumberStyleValue,
     isValidElement,
     linkEvent,
     normalizeChildren,
@@ -437,7 +410,7 @@ export {
   extend as __spread,
   findDOMNode,
   getFlagsForElementVnode,
-  isUnitlessNumber,
+  getNumberStyleValue,
   isValidElement,
   linkEvent,
   normalizeChildren,
@@ -471,7 +444,7 @@ export default {
   directClone,
   findDOMNode,
   getFlagsForElementVnode,
-  isUnitlessNumber,
+  getNumberStyleValue,
   isValidElement,
   linkEvent,
   normalizeChildren,

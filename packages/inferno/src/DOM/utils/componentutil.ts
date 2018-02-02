@@ -1,13 +1,9 @@
-/**
- * @module Inferno
- */ /** TypeDoc Comment */
-
 import { createTextVNode, createVoidVNode, directClone, options, Props, VNode } from '../../core/implementation';
 import { combineFrom, isArray, isFunction, isInvalid, isNull, isNullOrUndef, isStringOrNumber, throwError } from 'inferno-shared';
 import { EMPTY_OBJ } from './common';
 import { VNodeFlags } from 'inferno-vnode-flags';
 
-export function createClassComponentInstance(vNode: VNode, Component, props: Props, context: Object, lifecycle: Function[]) {
+export function createClassComponentInstance(vNode: VNode, Component, props: Props, context: Object) {
   const instance = new Component(props, context);
   vNode.children = instance;
   instance.$V = vNode;
@@ -16,9 +12,6 @@ export function createClassComponentInstance(vNode: VNode, Component, props: Pro
   if (instance.props === EMPTY_OBJ) {
     instance.props = props;
   }
-  // setState callbacks must fire after render is done when called from componentWillReceiveProps or componentWillMount
-  instance._lifecycle = lifecycle;
-
   instance.$UN = false;
   if (isFunction(instance.componentWillMount)) {
     instance.$BR = true;

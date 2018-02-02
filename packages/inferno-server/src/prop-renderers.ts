@@ -1,8 +1,4 @@
-/**
- * @module Inferno-Server
- */ /** TypeDoc Comment */
-
-import { isUnitlessNumber } from 'inferno';
+import { getNumberStyleValue } from 'inferno';
 import { isNumber, isString } from 'inferno-shared';
 import { getCssPropertyName } from './utils';
 
@@ -17,7 +13,7 @@ export function renderStylesToString(styles: string | object): string {
       if (isString(value)) {
         renderedString += `${getCssPropertyName(styleName)}${value};`;
       } else if (isNumber(value)) {
-        renderedString += `${getCssPropertyName(styleName)}${value}${isUnitlessNumber[styleName] ? '' : 'px'};`;
+        renderedString += `${getCssPropertyName(styleName)}${getNumberStyleValue(styleName, value)};`;
       }
     }
     return renderedString;

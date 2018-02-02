@@ -1,7 +1,3 @@
-/**
- * @module Inferno-Vnode-Flags
- */ /** TypeDoc Comment */
-
 /* If editing these values check babel-plugin-also */
 export const enum VNodeFlags {
   /* First set of bits define shape of vNode */
@@ -23,9 +19,11 @@ export const enum VNodeFlags {
   /* Masks */
   FormElement = InputElement | TextareaElement | SelectElement,
   Element = HtmlElement | SvgElement | InputElement | TextareaElement | SelectElement,
-  Component = ComponentFunction | ComponentClass | ComponentUnknown
+  Component = ComponentFunction | ComponentClass | ComponentUnknown,
+  VNodeShape = HtmlElement | ComponentClass | ComponentFunction | Text | Void | Portal
 }
 
+// Combinations are not possible, its bitwise only to reduce vNode size
 export const enum ChildFlags {
   /* Second set of bits define shape of children */
   HasInvalidChildren = 1,
