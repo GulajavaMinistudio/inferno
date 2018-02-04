@@ -9,10 +9,6 @@ import { validateKeys } from '../core/validate';
 export function mount(vNode: VNode, parentDom: Element | null, lifecycle: Function[], context: Object, isSVG: boolean) {
   const flags = vNode.flags;
 
-  if (process.env.NODE_ENV !== 'production') {
-    validateKeys(vNode, false);
-  }
-
   if (flags & VNodeFlags.Element) {
     return mountElement(vNode, parentDom, lifecycle, context, isSVG);
   }
@@ -75,6 +71,10 @@ export function mountElement(vNode: VNode, parentDom: Element | null, lifecycle:
     }
   }
 
+  if (process.env.NODE_ENV !== 'production') {
+    validateKeys(vNode);
+  }
+
   if (!isNull(parentDom)) {
     appendChild(parentDom, dom);
   }
@@ -82,7 +82,7 @@ export function mountElement(vNode: VNode, parentDom: Element | null, lifecycle:
   if ((childFlags & ChildFlags.HasInvalidChildren) === 0) {
     const childrenIsSVG = isSVG === true && vNode.type !== 'foreignObject';
 
-    if (childFlags & ChildFlags.HasVNodeChildren) {
+    if (childFlags === ChildFlags.HasVNodeChildren) {
       mount(children as VNode, dom, lifecycle, context, childrenIsSVG);
     } else if (childFlags & ChildFlags.MultipleChildren) {
       mountArrayChildren(children, dom, lifecycle, context, childrenIsSVG);
