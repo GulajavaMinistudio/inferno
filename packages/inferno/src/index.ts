@@ -7,7 +7,6 @@ import {
   getFlagsForElementVnode,
   InfernoChildren,
   InfernoInput,
-  normalizeChildren,
   normalizeProps,
   options,
   Props,
@@ -19,7 +18,7 @@ import { createPortal, createRenderer, render } from './DOM/rendering';
 import { EMPTY_OBJ } from './DOM/utils/common';
 import { Component } from './core/component';
 import { getNumberStyleValue } from './DOM/props';
-import { hydrate } from "./DOM/hydration";
+import { hydrate } from './DOM/hydration';
 
 if (process.env.NODE_ENV !== 'production') {
   /* tslint:disable-next-line:no-empty */
@@ -55,7 +54,6 @@ export {
   getNumberStyleValue,
   hydrate,
   linkEvent,
-  normalizeChildren,
   normalizeProps,
   options,
   render,
