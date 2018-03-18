@@ -1,6 +1,6 @@
 {
   "name": "inferno-clone-vnode",
-  "version": "4.0.8",
+  "version": "5.0.0",
   "license": "MIT",
   "description": "provides helper function to clone Inferno's vNodes",
   "author": {
@@ -12,7 +12,8 @@
   },
   "homepage": "https://github.com/infernojs/inferno#readme",
   "main": "index.js",
-  "module": "dist/index.mjs",
+  "module": "dist/index.esm.js",
+  "dev:module": "dist/index.dev.esm.js",
   "typings": "dist/index.d.ts",
   "keywords": [
     "babel",
@@ -25,12 +26,12 @@
     "vdom"
   ],
   "peerDependencies": {
-    "inferno": ">=4"
+    "inferno": ">=5"
   },
   "devDependencies": {
-    "inferno": "4.0.8",
-    "inferno-shared": "4.0.8",
-    "inferno-vnode-flags": "4.0.8"
+    "inferno": "5.0.0",
+    "inferno-shared": "5.0.0",
+    "inferno-vnode-flags": "5.0.0"
   },
   "rollup": {
     "bundledDependencies": [

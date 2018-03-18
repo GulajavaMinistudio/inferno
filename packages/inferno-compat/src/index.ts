@@ -24,7 +24,7 @@ import { cloneVNode } from 'inferno-clone-vnode';
 import { ClassicComponentClass, ComponentSpec, createClass } from 'inferno-create-class';
 import { createElement } from 'inferno-create-element';
 import { isArray, isBrowser, isFunction, isInvalid, isNull, isNullOrUndef, isString, NO_OP } from 'inferno-shared';
-import { VNodeFlags} from 'inferno-vnode-flags';
+import { VNodeFlags } from 'inferno-vnode-flags';
 import { isValidElement } from './isValidElement';
 import PropTypes from './PropTypes';
 import { SVGDOMPropertyConfig } from './SVGDOMPropertyConfig';
@@ -158,15 +158,13 @@ function normalizeFormProps(name: string, props: Props | any) {
     const type = props.type;
     let eventName;
 
-    if (type === 'checkbox') {
-      eventName = 'onclick';
+    if (!type || type === 'text') {
+      eventName = 'oninput';
     } else if (type === 'file') {
       eventName = 'onchange';
-    } else {
-      eventName = 'oninput';
     }
 
-    if (!props[eventName]) {
+    if (eventName && !props[eventName]) {
       props[eventName] = props.onChange;
       props.onChange = void 0;
     }
@@ -179,9 +177,23 @@ function normalizeFormProps(name: string, props: Props | any) {
 // every prop event that starts with "on", i.e. onClick or onKeyPress
 // but in reality devs use onSomething for many things, not only for
 // input events
-if (typeof Event !== 'undefined' && !Event.prototype.persist) {
-  // tslint:disable-next-line:no-empty
-  Event.prototype.persist = function() {};
+if (typeof Event !== 'undefined') {
+  const eventProtoType = Event.prototype as any;
+
+  if (!eventProtoType.persist) {
+    // tslint:disable-next-line:no-empty
+    eventProtoType.persist = function() {};
+  }
+  if (!eventProtoType.isDefaultPrevented) {
+    eventProtoType.isDefaultPrevented = function() {
+      return this.defaultPrevented;
+    };
+  }
+  if (!eventProtoType.isPropagationStopped) {
+    eventProtoType.isPropagationStopped = function() {
+      return this.cancelBubble;
+    };
+  }
 }
 
 function iterableToArray(iterable) {
@@ -210,7 +222,7 @@ options.createVNode = (vNode: VNode) => {
   }
 
   // React supports iterable children, in addition to Array-like
-  if (hasSymbolSupport && !isNull(children) && !isArray(children) && typeof children === 'object'&& isFunction(children[symbolIterator])) {
+  if (hasSymbolSupport && !isNull(children) && !isArray(children) && typeof children === 'object' && isFunction(children[symbolIterator])) {
     vNode.children = iterableToArray(children[symbolIterator]());
   }
   if (typeof ref === 'string' && !isNull(currentComponent)) {
@@ -272,7 +284,13 @@ class PureComponent<P, S> extends Component<P, S> {
   }
 }
 
-class WrapperComponent<P, S> extends Component<P, S> {
+interface ContextProps {
+  context: any;
+}
+
+type WrapperComponentProps<P> = P & ContextProps;
+
+class WrapperComponent<P, S> extends Component<WrapperComponentProps<P>, S> {
   public getChildContext() {
     // tslint:disable-next-line
     return this.props.context;
