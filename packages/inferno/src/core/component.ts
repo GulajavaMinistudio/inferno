@@ -83,8 +83,7 @@ function applyState<P, S>(component: Component<P, S>, force: boolean, callback?:
     let vNode = component.$V as VNode;
     const lastInput = component.$LI as VNode;
     const parentDom = lastInput.dom && lastInput.dom.parentNode;
-
-    updateClassComponent(component, nextState, vNode, props, parentDom, LIFECYCLE, context, (vNode.flags & VNodeFlags.SvgElement) > 0, force, true);
+    updateClassComponent(component, nextState, vNode, props, parentDom, context, (vNode.flags & VNodeFlags.SvgElement) > 0, force, true);
     if (component.$UN) {
       return;
     }
@@ -161,8 +160,10 @@ export class Component<P, S> {
     if (this.$UN) {
       return;
     }
-
+    // Do not allow double render during force update
+    this.$BR = true;
     applyState(this, true, callback);
+    this.$BR = false;
   }
 
   public setState(newState: { [k in keyof S]?: S[k] } | Function, callback?: Function) {
