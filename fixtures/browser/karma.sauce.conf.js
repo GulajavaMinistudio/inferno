@@ -50,7 +50,7 @@ const customLaunchers = {
     base: 'SauceLabs',
     browserName: 'safari',
     platform: 'OS X 10.12',
-    version: "11"
+    version: '11'
   },
   slIE10: {
     base: 'SauceLabs',
@@ -126,7 +126,7 @@ module.exports = function(config) {
       }
     },
 
-    reporters: ['failed', 'saucelabs'],
+    reporters: ['dots', 'saucelabs'],
     sauceLabs: {
       build: 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')',
       tunnelIdentifier: process.env.TRAVIS_JOB_NUMBER,
@@ -140,7 +140,7 @@ module.exports = function(config) {
       commandTimeout: 400
     },
 
-    plugins: ['karma-jasmine', 'karma-jasmine-matchers', 'karma-webpack', 'karma-failed-reporter', 'karma-sauce-launcher'],
+    plugins: ['karma-jasmine', 'karma-jasmine-matchers', 'karma-webpack', 'karma-sauce-launcher'],
 
     customLaunchers: customLaunchers,
     browsers: Object.keys(customLaunchers),
