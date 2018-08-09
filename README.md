@@ -52,7 +52,7 @@ List of breaking changes can be found from [here](https://github.com/infernojs/i
 
 - [UI Bench](https://localvoid.github.io/uibench/)
 - [dbmonster](https://rawgit.com/infernojs/dbmonster-inferno/master/index.html)
-- [JS Web Frameworks Benchmark - Round 6](http://stefankrause.net/js-frameworks-benchmark6/webdriver-ts/table.html)
+- [JS Web Frameworks Benchmark - Round 7](https://www.stefankrause.net/js-frameworks-benchmark7/table.html)
 - [Isomorphic-UI-Benchmark](https://github.com/marko-js/isomorphic-ui-benchmarks)
 - [1k Components](https://rawgit.com/infernojs/inferno/master/benchmarks/1kcomponents/index.html)
 
@@ -791,15 +791,15 @@ When you are building for development, you may want to use `inferno.dev.esm.js` 
 That build version has extra level of validation for development purposes. You can use it by adding following code to your rollup config.
 
 ```js
-    const alias = require('rollup-plugin-alias');
+const alias = require('rollup-plugin-alias');
 
     ...
-	plugins: {
-    /* When doing development workflow we want to make sure webpack picks up development build of inferno */
-		alias: {
-			'inferno': __dirname + '/node_modules/inferno/dist/index.dev.esm.js'
-		}
-	}
+  plugins: [
+    alias({
+      'inferno': __dirname + '/node_modules/inferno/dist/index.dev.esm.js'
+    }),
+  ]
+
 ```
 
 ### Custom namespaces

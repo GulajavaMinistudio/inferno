@@ -22,7 +22,12 @@ describe('inject based context', () => {
       observer(
         createClass({
           render() {
-            return <div>context:{this.props.foo}</div>;
+            return (
+              <div>
+                context:
+                {this.props.foo}
+              </div>
+            );
           }
         })
       )
@@ -42,7 +47,12 @@ describe('inject based context', () => {
     const C = inject('foo')(
       createClass({
         render() {
-          return <div>context:{this.props.foo}</div>;
+          return (
+            <div>
+              context:
+              {this.props.foo}
+            </div>
+          );
         }
       })
     );
@@ -66,7 +76,8 @@ describe('inject based context', () => {
           render() {
             return (
               <div>
-                context:{this.props.foo}
+                context:
+                {this.props.foo}
                 {this.props.bar}
               </div>
             );
@@ -102,7 +113,12 @@ describe('inject based context', () => {
       observer(
         createClass({
           render() {
-            return <div>context:{this.props.foo}</div>;
+            return (
+              <div>
+                context:
+                {this.props.foo}
+              </div>
+            );
           }
         })
       )
@@ -129,7 +145,12 @@ describe('inject based context', () => {
       observer(
         createClass({
           render() {
-            return <div>context:{this.props.foo}</div>;
+            return (
+              <div>
+                context:
+                {this.props.foo}
+              </div>
+            );
           }
         })
       )
@@ -165,7 +186,12 @@ describe('inject based context', () => {
       ['foo'],
       createClass({
         render() {
-          return <div>context:{this.props.foo}</div>;
+          return (
+            <div>
+              context:
+              {this.props.foo}
+            </div>
+          );
         }
       })
     );
@@ -217,7 +243,8 @@ describe('inject based context', () => {
           render() {
             return (
               <div>
-                context:{this.props.zoom}
+                context:
+                {this.props.zoom}
                 {this.props.baz}
               </div>
             );
@@ -259,40 +286,13 @@ describe('inject based context', () => {
     done();
   });
 
-  // There are no contextTypes in Inferno
-  // it('warning is printed when attaching contextTypes to HOC', done => {
-  //   const msg = [];
-  //   const baseWarn = console.error;
-  //   console.error = m => msg.push(m);
-  //   const C = inject(['foo'])(createClass({
-  //     displayName: 'C',
-  //     render() {
-  //       return <div>context:{ this.props.foo }</div>;
-  //     }
-  //   }));
-  //   C.propTypes = {};
-  //   C.defaultProps = {};
-  //   C.contextTypes = {};
-  //
-  //   const B = () => <C />;
-  //   const A = () =>
-  //     <Provider foo='bar'>
-  //       <B />
-  //     </Provider>;
-  //   render(<A />, container);
-  //   expect(msg.length).toBe(1);
-  //   expect(msg[0]).toBe("Mobx Injector: you are trying to attach `contextTypes` on an component decorated with `inject` (or `observer`) HOC. Please specify the contextTypes on the wrapped component instead. It is accessible through the `wrappedComponent`");
-  //   console.error = baseWarn;
-  //   done();
-  // });
-
   // DefaultProps only, there are no propTypes in inferno
   it('propTypes and defaultProps are forwarded', done => {
     const msg = [];
     const baseError = console.error;
     console.error = m => msg.push(m);
 
-    const C = inject(['foo'])(
+    const C = inject('foo')(
       createClass({
         displayName: 'C',
         render() {
@@ -315,38 +315,6 @@ describe('inject based context', () => {
     console.error = baseError;
     done();
   });
-
-  // There are no propTypes in Inferno
-  // it('warning is not printed when attaching propTypes to injected component', done => {
-  //   let msg = [];
-  //   const baseWarn = console.error;
-  //   console.error = m => msg = m;
-  //
-  //   const C = inject(["foo"])(createClass({
-  //     displayName: 'C',
-  //     render: () => <div>context:{ this.props.foo }</div>
-  //   }));
-  //   C.propTypes = {};
-  //
-  //   expect(msg.length, 0);
-  //   console.error = baseWarn;
-  //   done();
-  // })
-  //
-  // it('warning is not printed when attaching propTypes to wrappedComponent', done => {
-  //   let msg = [];
-  //   const baseWarn = console.error;
-  //   console.error = m => msg = m;
-  //   const C = inject(["foo"])(createClass({
-  //     displayName: 'C',
-  //     render: () => <div>context:{ this.props.foo }</div>
-  //   }))
-  //   C.wrappedComponent.propTypes = {};
-  //
-  //   expect(msg.length, 0);
-  //   console.error = baseWarn;
-  //   done();
-  // });
 
   it('using a custom injector is reactive', done => {
     const user = mobx.observable({ name: 'Noa' });
