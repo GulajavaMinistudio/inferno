@@ -26,7 +26,7 @@ module.exports = function(version, options) {
     })
   ];
 
-  if (!options.es6) {
+  if (!options.esnext) {
     plugins.push(bublePlugin());
   }
 
@@ -61,7 +61,7 @@ module.exports = function(version, options) {
           html5_comments: false,
           shebang: false
         },
-        sourceMap: false,
+        sourcemap: false,
         toplevel: false,
         warnings: false
       })

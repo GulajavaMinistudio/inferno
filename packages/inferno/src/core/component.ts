@@ -145,14 +145,6 @@ export interface ComponentClass<P = {}, S = {}> {
   getChildContext?(): void;
 }
 
-export type Validator<T> = { bivarianceHack(object: T, key: string, componentName: string, ...rest: any[]): Error | null }['bivarianceHack'];
-
-export interface Requireable<T> extends Validator<T> {
-  isRequired: Validator<T>;
-}
-
-export type ValidationMap<T> = { [K in keyof T]?: Validator<T> };
-
 export interface Component<P = {}, S = {}> extends ComponentClass<P, S> {}
 export class Component<P, S> {
   // Public
@@ -206,5 +198,5 @@ export class Component<P, S> {
   }
 
   // tslint:disable-next-line:no-empty
-  public render(nextProps: P, nextState, nextContext): InfernoChildren | void {}
+  public render(_nextProps: P, _nextState, _nextContext): InfernoChildren | void {}
 }

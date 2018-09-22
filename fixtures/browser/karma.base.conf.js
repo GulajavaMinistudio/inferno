@@ -1,6 +1,6 @@
 const path = require('path');
-const resolve = pkg => path.join(__dirname, '../../packages', pkg, 'src');
-const useInfernoCompatPkg = process.env.InfernoCompat == '1';
+const resolve = pkg => path.join(__dirname, '../../packages', pkg, 'dist', 'index.dev.esm.js');
+const useInfernoCompatPkg = process.env.InfernoCompat === '1';
 
 console.info('*** Starting karma tests, Inferno-compat is ' + (useInfernoCompatPkg ? 'on.' : 'off.') + ' ***');
 
@@ -79,28 +79,40 @@ module.exports = function(config) {
     },
 
     webpack: {
+      output: {
+        filename: '[name]'
+      },
       mode: 'development',
       module: {
         rules: [
           {
             test: /\.jsx?$/,
-            loader: 'babel-loader',
+            loader: path.join(__dirname, 'node_modules/babel-loader'),
             exclude: /node_modules/,
-            query: {
-              presets: ['stage-2'],
+            options: {
+              babelrc: false,
+              presets: [
+                ["@babel/preset-env",
+                  {
+                    "loose": true,
+                    "targets": {
+                      "browsers": [
+                        "ie >= 10",
+                        "safari > 7"
+                      ]
+                    }
+                  }
+                ]
+              ],
               plugins: [
-                'transform-decorators-legacy',
-                ['babel-plugin-inferno', { imports: true }],
-                'transform-class-properties',
-                'transform-object-rest-spread',
-                'babel-plugin-syntax-jsx',
-                'transform-class-properties'
+                ["babel-plugin-inferno", {"imports": true}],
+                ["@babel/plugin-proposal-class-properties", { "loose": true }]
               ]
             }
           },
           {
             test: /\.tsx?$/,
-            loader: 'ts-loader',
+            loader: path.join(__dirname, 'node_modules/ts-loader'),
             options: {
               compilerOptions: {
                 target: 'es5',
@@ -111,6 +123,9 @@ module.exports = function(config) {
           }
         ]
       },
+      output: {
+        filename: '[name]'
+      },
       resolve: {
         alias: {
           inferno: resolve('inferno'),
@@ -119,6 +134,7 @@ module.exports = function(config) {
           'inferno-create-class': resolve('inferno-create-class'),
           'inferno-create-element': resolve('inferno-create-element'),
           'inferno-devtools': resolve('inferno-devtools'),
+          'inferno-extras': resolve('inferno-extras'),
           'inferno-hyperscript': resolve('inferno-hyperscript'),
           'inferno-mobx': resolve('inferno-mobx'),
           'inferno-redux': resolve('inferno-redux'),
@@ -126,7 +142,7 @@ module.exports = function(config) {
           'inferno-server': resolve('inferno-server'),
           'inferno-shared': resolve('inferno-shared'),
           'inferno-test-utils': resolve('inferno-test-utils'),
-          'inferno-utils': resolve('inferno-utils'),
+          'inferno-utils': path.join(__dirname, '../../packages', 'inferno-utils', 'src', 'index.ts'),
           'inferno-vnode-flags': resolve('inferno-vnode-flags'),
           'inferno-clone-vnode': resolve('inferno-clone-vnode'),
           mobx: path.join(__dirname, '../../node_modules/mobx/lib/mobx.module.js')

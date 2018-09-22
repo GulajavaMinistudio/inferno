@@ -229,7 +229,7 @@ export function updateClassComponent(
     if (!fromSetState && isFunction(instance.componentWillReceiveProps)) {
       instance.$BR = true;
       instance.componentWillReceiveProps(nextProps, context);
-      // If instance component was removed during its own update do nothing...
+      // If instance component was removed during its own update do nothing.
       if (instance.$UN) {
         return;
       }
@@ -279,8 +279,9 @@ export function updateClassComponent(
 
     if (didUpdate) {
       const lastInput = instance.$LI;
-      const nextInput = (instance.$LI = handleComponentInput(renderOutput, nextVNode));
+      const nextInput = handleComponentInput(renderOutput, nextVNode);
       patch(lastInput, nextInput, parentDom, childContext, isSVG);
+      instance.$LI = nextInput;
       if (isFunction(instance.componentDidUpdate)) {
         instance.componentDidUpdate(lastProps, lastState);
       }
