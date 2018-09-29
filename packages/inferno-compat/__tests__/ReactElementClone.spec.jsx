@@ -8,7 +8,7 @@
  */
 
 import React from 'inferno-compat';
-import { createComponentVNode, render } from 'inferno';
+import { createComponentVNode } from 'inferno';
 import { Wrapper } from 'inferno-test-utils';
 import { VNodeFlags } from 'inferno-vnode-flags';
 
@@ -18,7 +18,7 @@ describe('ReactElementClone', function() {
   let container;
 
   function renderIntoDocument(input) {
-    return render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
+    return React.render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
   }
 
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe('ReactElementClone', function() {
   });
 
   afterEach(() => {
-    render(null, container);
+    React.render(null, container);
     container.innerHTML = '';
     document.body.removeChild(container);
   });
@@ -65,23 +65,6 @@ describe('ReactElementClone', function() {
     });
     var component = renderIntoDocument(<Grandparent />);
     expect(ReactDOM.findDOMNode(component).childNodes[0].className).toBe('xyz');
-  });
-
-  it('should keep the original ref if it is not overridden', function() {
-    var Grandparent = React.createClass({
-      render: function() {
-        return <Parent child={<div ref="yolo" />} />;
-      }
-    });
-
-    var Parent = React.createClass({
-      render: function() {
-        return <div>{React.cloneElement(this.props.child, { className: 'xyz' })}</div>;
-      }
-    });
-
-    var component = renderIntoDocument(<Grandparent />);
-    expect(component.$LI.children.refs.yolo.tagName).toBe('DIV');
   });
 
   it('should transfer the key property', function() {

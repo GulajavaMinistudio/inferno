@@ -16,12 +16,17 @@ export const enum VNodeFlags {
   Portal = 1 << 10,
   ReCreate = 1 << 11,
   ContentEditable = 1 << 12,
+  Fragment = 1 << 13,
+  InUse = 1 << 14,
+  ForwardRef = 1 << 15,
 
   /* Masks */
+  ForwardRefComponent = ForwardRef | ComponentFunction,
   FormElement = InputElement | TextareaElement | SelectElement,
-  Element = HtmlElement | SvgElement | InputElement | TextareaElement | SelectElement,
+  Element = HtmlElement | SvgElement | FormElement,
   Component = ComponentFunction | ComponentClass | ComponentUnknown,
-  VNodeShape = HtmlElement | ComponentClass | ComponentFunction | Text | Void | Portal
+  DOMRef = Element | Text | Void | Portal,
+  ClearInUse = ~InUse
 }
 
 // Combinations are not possible, its bitwise only to reduce vNode size
@@ -32,6 +37,7 @@ export const enum ChildFlags {
   HasVNodeChildren = 1 << 1,
   HasNonKeyedChildren = 1 << 2,
   HasKeyedChildren = 1 << 3,
+  HasTextChildren = 1 << 4,
 
   MultipleChildren = HasNonKeyedChildren | HasKeyedChildren
 }

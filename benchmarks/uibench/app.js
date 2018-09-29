@@ -5,9 +5,9 @@ uibench.init('Inferno');
 function TreeLeaf({children}) {
   return (
     <li
-      $HasVNodeChildren
+      $HasTextChildren
       className="TreeLeaf">
-      {createTextVNode(children)}
+      {children}
     </li>
   );
 }
@@ -106,10 +106,10 @@ function TableCell({children}) {
    */
   return (
     <td
-      $HasVNodeChildren
+      $HasTextChildren
       onClick={linkEvent(children, onClick)}
       className="TableCell">
-      {createTextVNode(children)}
+      {children}
     </td>
   );
 }
@@ -172,17 +172,7 @@ function table(data) {
   );
 }
 
-var lastMainData;
-
 function main(data) {
-  if (data === lastMainData) {
-    /*
-    * We can short circuit rendering process, by returning Inferno.NO_OP
-    * It behaves same way as shouldComponentUpdate => false
-    * */
-    return NO_OP;
-  }
-  lastMainData = data;
   var location = data.location;
   var section;
 

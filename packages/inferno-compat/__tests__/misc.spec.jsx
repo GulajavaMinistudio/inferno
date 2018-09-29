@@ -1,4 +1,3 @@
-import { render } from 'inferno';
 import { innerHTML } from 'inferno-utils';
 import React, {
   __spread,
@@ -7,6 +6,8 @@ import React, {
   Component,
   createClass,
   createElement,
+  render,
+  hydrate,
   isValidElement,
   PropTypes,
   unstable_renderSubtreeIntoContainer
@@ -112,11 +113,11 @@ describe('MISC', () => {
       initialChild.appendChild(Text('initial content'));
       root.appendChild(initialChild);
 
-      render(<div>dynamic content</div>, root);
+      hydrate(<div>dynamic content</div>, root);
       expect(root.textContent).toEqual('dynamic content');
     });
 
-    it('should remove extra elements', () => {
+    it('hydrate should remove extra elements', () => {
       let ce = type => document.createElement(type);
       let Text = text => document.createTextNode(text);
       let root = ce('div');
@@ -129,7 +130,7 @@ describe('MISC', () => {
       c2.appendChild(Text('extra content'));
       root.appendChild(c2);
 
-      render(<div>dynamic content</div>, root);
+      hydrate(<div>dynamic content</div>, root);
       expect(root.textContent).toEqual('dynamic content');
     });
 
@@ -141,7 +142,7 @@ describe('MISC', () => {
       root.appendChild(Text('Text Content in the root'));
       root.appendChild(Text('More Text Content'));
 
-      render(<div>dynamic content</div>, root);
+      hydrate(<div>dynamic content</div>, root);
       expect(root.textContent).toEqual('dynamic content');
     });
 
@@ -205,7 +206,6 @@ describe('MISC', () => {
           a<span>b</span>
         </foo>
       );
-      // TODO: Cloning changes parent childFlags to keyed.
       expect(JSON.stringify(cloneElement(element).children)).toEqual(JSON.stringify(element.children));
     });
 
@@ -296,19 +296,6 @@ describe('MISC', () => {
       const root = document.createElement('div');
       const app = render(<App />, root);
       expect(typeof app.inner.getNode === 'function').toEqual(true);
-    });
-  });
-
-  describe('Unsupported hidden internal __spread API', () => {
-    it('should work with multiple objects', () => {
-      const start = {};
-      const result = React.__spread(start, { one: 1, two: 3 }, { two: 2 });
-      expect(result).toEqual(start);
-      expect(start).toEqual({ one: 1, two: 2 });
-    });
-
-    it('should be exported on default and as __spread', () => {
-      expect(__spread).toEqual(React.__spread);
     });
   });
 });

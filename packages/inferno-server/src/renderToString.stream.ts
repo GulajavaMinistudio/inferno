@@ -2,7 +2,7 @@ import { combineFrom, isFunction, isInvalid, isNull, isNullOrUndef, isNumber, is
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { Readable } from 'stream';
 import { renderStylesToString } from './prop-renderers';
-import { escapeText, isAttributeNameSafe, voidElements } from './utils';
+import { createDerivedState, escapeText, isAttributeNameSafe, voidElements } from './utils';
 import { VNode } from 'inferno';
 
 const resolvedPromise = Promise.resolve();
@@ -24,7 +24,7 @@ export class RenderStream extends Readable {
 
     resolvedPromise
       .then(() => {
-        return this.renderNode(this.initNode, null, false);
+        return this.renderNode(this.initNode, null);
       })
       .then(() => {
         this.push(null);
@@ -34,7 +34,7 @@ export class RenderStream extends Readable {
       });
   }
 
-  public renderNode(vNode, context, insertComment: boolean) {
+  public renderNode(vNode, context) {
     const flags = vNode.flags;
 
     if ((flags & VNodeFlags.Component) > 0) {
@@ -44,7 +44,7 @@ export class RenderStream extends Readable {
       return this.renderElement(vNode, context);
     }
 
-    return this.renderText(vNode, insertComment);
+    return this.renderText(vNode);
   }
 
   public renderComponent(vComponent, context, isClass) {
@@ -64,11 +64,13 @@ export class RenderStream extends Readable {
         return this.push(renderOutput + '');
       }
 
-      return this.renderNode(renderOutput, context, false);
+      return this.renderNode(renderOutput, context);
     }
 
     const instance = new type(props, context);
+    const hasNewAPI = Boolean(type.getDerivedStateFromProps);
     instance.$BS = false;
+    instance.$SSR = true;
     let childContext;
     if (isFunction(instance.getChildContext)) {
       childContext = instance.getChildContext();
@@ -80,7 +82,7 @@ export class RenderStream extends Readable {
     instance.context = context;
     instance.$BR = true;
 
-    return Promise.resolve(instance.componentWillMount && instance.componentWillMount()).then(() => {
+    return Promise.resolve(!hasNewAPI && instance.componentWillMount && instance.componentWillMount()).then(() => {
       if (instance.$PSS) {
         const state = instance.state;
         const pending = instance.$PS;
@@ -97,7 +99,9 @@ export class RenderStream extends Readable {
       }
 
       instance.$BR = false;
-
+      if (hasNewAPI) {
+        instance.state = createDerivedState(instance, props, instance.state);
+      }
       const renderOutput = instance.render(instance.props, instance.state, instance.context);
       instance.$PSS = false;
 
@@ -111,30 +115,28 @@ export class RenderStream extends Readable {
         return this.push(renderOutput + '');
       }
 
-      return this.renderNode(renderOutput, context, false);
+      return this.renderNode(renderOutput, context);
     });
   }
 
-  public renderChildren(children: VNode[] | VNode, context: any, childFlags: ChildFlags) {
-    if (childFlags & ChildFlags.HasVNodeChildren) {
-      return this.renderNode(children, context, false);
+  public renderChildren(children: VNode[] | VNode | string, context: any, childFlags: ChildFlags) {
+    if (childFlags === ChildFlags.HasVNodeChildren) {
+      return this.renderNode(children, context);
+    }
+    if (childFlags === ChildFlags.HasTextChildren) {
+      return this.push(children === '' ? ' ' : escapeText(children + ''));
     }
     if (childFlags & ChildFlags.MultipleChildren) {
       return (children as VNode[]).reduce((p, child) => {
-        return p.then(insertComment => {
-          if ((child.flags & VNodeFlags.Text) > 0) {
-            if (insertComment) {
-              this.push('<!---->');
-            }
-          }
-          return Promise.resolve(this.renderNode(child, context, false)).then(() => !!(child.flags & VNodeFlags.Text));
+        return p.then(() => {
+          return Promise.resolve(this.renderNode(child, context)).then(() => !!(child.flags & VNodeFlags.Text));
         });
       }, Promise.resolve(false));
     }
   }
 
-  public renderText(vNode, insertComment) {
-    this.push((insertComment ? '<!---->' : '') + (vNode.children === '' ? ' ' : escapeText(vNode.children)));
+  public renderText(vNode) {
+    this.push(vNode.children === '' ? ' ' : escapeText(vNode.children));
   }
 
   public renderElement(vNode, context) {
@@ -213,10 +215,11 @@ export class RenderStream extends Readable {
     }
     const childFlags = vNode.childFlags;
 
-    if (childFlags & ChildFlags.HasInvalidChildren) {
+    if (childFlags === ChildFlags.HasInvalidChildren) {
       this.push(`</${type}>`);
       return;
     }
+
     return Promise.resolve(this.renderChildren(vNode.children, context, childFlags)).then(() => {
       this.push(`</${type}>`);
     });

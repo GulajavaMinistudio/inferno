@@ -41,12 +41,12 @@ describe('SSR Creation Streams - (non-JSX)', () => {
     // },
     {
       description: 'should render div with span child and styling #2',
-      template: () => createElement('div', null, createElement('span', { style: { borderLeft: 10 } })),
+      template: () => createElement('div', null, createElement('span', { style: { 'border-left': '10px' } })),
       result: '<div><span style="border-left:10px;"></span></div>'
     },
     {
       description: 'should render div with span child and styling #3',
-      template: () => createElement('div', null, createElement('span', { style: { fontFamily: 'Arial' } })),
+      template: () => createElement('div', null, createElement('span', { style: { 'font-family': 'Arial' } })),
       result: '<div><span style="font-family:Arial;"></span></div>'
     },
     {
@@ -67,7 +67,7 @@ describe('SSR Creation Streams - (non-JSX)', () => {
     {
       description: 'should render div with text children',
       template: () => createElement('div', null, 'Hello', ' world'),
-      result: '<div>Hello<!----> world</div>'
+      result: '<div>Hello world</div>'
     },
     {
       description: 'should render a void element correct',
@@ -115,12 +115,12 @@ describe('SSR Creation Streams - (non-JSX)', () => {
     {
       description: 'should render with array text children',
       template: value => createElement('a', null, ['a', 'b']),
-      result: '<a>a<!---->b</a>'
+      result: '<a>ab</a>'
     },
     {
       description: 'should render with array children containing an array of text children',
       template: value => createElement('a', null, [['a', 'b']]),
-      result: '<a>a<!---->b</a>'
+      result: '<a>ab</a>'
     },
     {
       description: 'should render with array null children',
@@ -174,7 +174,7 @@ describe('SSR Creation Streams - (non-JSX)', () => {
           Hello world, {'1'}2{'3'}
         </div>
       ),
-      result: '<div>Hello world, <!---->1<!---->2<!---->3</div>'
+      result: '<div>Hello world, 123</div>'
     },
     {
       description: 'should render text with escaped symbols',
@@ -189,7 +189,7 @@ describe('SSR Creation Streams - (non-JSX)', () => {
     {
       description: 'should render mixed invalid/valid children',
       template: () => <div>{[null, '123', null, '456']}</div>,
-      result: '<div>123<!---->456</div>'
+      result: '<div>123456</div>'
     },
     {
       description: 'should ignore children as props',
@@ -243,13 +243,13 @@ describe('SSR Creation Streams - (non-JSX)', () => {
       result: '<div><div> </div><p>Test</p></div>'
     },
     {
-      description: 'Should render backgroundColor',
-      template: () => <div style={{ backgroundColor: 'red', borderBottomColor: 'green' }} />,
+      description: 'Should render background color',
+      template: () => <div style={{ 'background-color': 'red', 'border-bottom-color': 'green' }} />,
       result: '<div style="background-color:red;border-bottom-color:green;"></div>'
     },
     {
       description: 'Should not render null styles',
-      template: () => <div style={{ backgroundColor: null, borderBottomColor: null }} />,
+      template: () => <div style={{ 'background-color': null, 'border-bottom-color': null }} />,
       result: '<div style=""></div>'
     },
     {
@@ -482,6 +482,32 @@ describe('SSR Creation Streams - (non-JSX)', () => {
         </div>
       ).then(function(output) {
         expect(output).toEqual('<div><!--!--></div>');
+        done();
+      });
+    });
+
+    it('Should be possible to use getDerivedStateFromProps', done => {
+      class Test extends Component {
+        constructor(props) {
+          super(props);
+
+          this.state = {
+            value: 0
+          };
+        }
+
+        static getDerivedStateFromProps(props, state) {
+          return {
+            value: state.value + 1
+          };
+        }
+
+        render() {
+          return <div>{this.state.value}</div>;
+        }
+      }
+      return streamPromise(<Test />).then(function(output) {
+        expect(output).toEqual('<div>1</div>');
         done();
       });
     });

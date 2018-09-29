@@ -1,7 +1,7 @@
-import { isBrowser, isFunction, isInvalid, isNull, isNullOrUndef, NO_OP, throwError, warning } from 'inferno-shared';
-import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
-import { createVNode, directClone, InfernoChildren, InfernoInput, options, VNode } from '../core/implementation';
-import { hydrate } from './hydration';
+import { isBrowser, isFunction, isNullOrUndef, throwError, warning } from 'inferno-shared';
+import { VNodeFlags } from 'inferno-vnode-flags';
+import { directClone, options } from '../core/implementation';
+import { InfernoNode, VNode } from '../core/types';
 import { mount } from './mounting';
 import { patch } from './patching';
 import { remove } from './unmounting';
@@ -17,46 +17,39 @@ if (process.env.NODE_ENV !== 'production') {
 
 const documentBody = isBrowser ? document.body : null;
 
-export function render(
-  input: InfernoInput,
-  parentDom: Element | SVGAElement | DocumentFragment | HTMLElement | Node | null,
-  callback?: Function
-): InfernoChildren | void {
+export function __render(
+  input: VNode | null | InfernoNode | undefined,
+  parentDOM: Element | SVGAElement | ShadowRoot | DocumentFragment | HTMLElement | Node | null,
+  callback?: Function | null,
+  context?: any
+): void {
   // Development warning
   if (process.env.NODE_ENV !== 'production') {
-    if (documentBody === parentDom) {
+    if (documentBody === parentDOM) {
       throwError('you cannot render() to the "document.body". Use an empty element as a container instead.');
     }
   }
-  if ((input as string) === NO_OP) {
-    return;
-  }
-
-  let rootInput = (parentDom as any).$V as VNode;
+  let rootInput = (parentDOM as any).$V as VNode;
 
   if (isNullOrUndef(rootInput)) {
-    if (!isInvalid(input)) {
-      if ((input as VNode).dom) {
+    if (!isNullOrUndef(input)) {
+      if ((input as VNode).flags & VNodeFlags.InUse) {
         input = directClone(input as VNode);
       }
-      if (isNull((parentDom as Node).firstChild)) {
-        mount(input as VNode, parentDom as Element, EMPTY_OBJ, false);
-        (parentDom as any).$V = input;
-      } else {
-        hydrate(input, parentDom as any);
-      }
+      mount(input as VNode, parentDOM as Element, context || EMPTY_OBJ, false, null);
+      (parentDOM as any).$V = input;
       rootInput = input as VNode;
     }
   } else {
     if (isNullOrUndef(input)) {
-      remove(rootInput as VNode, parentDom as Element);
-      (parentDom as any).$V = null;
+      remove(rootInput as VNode, parentDOM as Element);
+      (parentDOM as any).$V = null;
     } else {
-      if ((input as VNode).dom) {
+      if ((input as VNode).flags & VNodeFlags.InUse) {
         input = directClone(input as VNode);
       }
-      patch(rootInput as VNode, input as VNode, parentDom as Element, EMPTY_OBJ, false);
-      rootInput = (parentDom as any).$V = input as VNode;
+      patch(rootInput as VNode, input as VNode, parentDOM as Element, context || EMPTY_OBJ, false, null);
+      rootInput = (parentDOM as any).$V = input as VNode;
     }
   }
 
@@ -68,22 +61,24 @@ export function render(
     callback();
   }
   if (isFunction(options.renderComplete)) {
-    options.renderComplete(rootInput);
-  }
-  if (rootInput && rootInput.flags & VNodeFlags.Component) {
-    return rootInput.children;
+    options.renderComplete(rootInput, parentDOM);
   }
 }
 
-export function createRenderer(parentDom?) {
+export function render(
+  input: VNode | null | InfernoNode | undefined,
+  parentDOM: Element | SVGAElement | ShadowRoot | DocumentFragment | HTMLElement | Node | null,
+  callback?: Function | null,
+  context?: any
+): void {
+  __render(input, parentDOM, callback, context);
+}
+
+export function createRenderer(parentDOM?) {
   return function renderer(lastInput, nextInput) {
-    if (!parentDom) {
-      parentDom = lastInput;
+    if (!parentDOM) {
+      parentDOM = lastInput;
     }
-    render(nextInput, parentDom);
+    render(nextInput, parentDOM);
   };
-}
-
-export function createPortal(children, container) {
-  return createVNode(VNodeFlags.Portal, container, null, children, ChildFlags.UnknownChildren, null, isInvalid(children) ? null : children.key, null);
 }

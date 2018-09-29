@@ -8,7 +8,7 @@
  */
 
 import React from 'inferno-compat';
-import { createComponentVNode, render } from 'inferno';
+import { createComponentVNode } from 'inferno';
 import { Wrapper } from 'inferno-test-utils';
 import { VNodeFlags } from 'inferno-vnode-flags';
 
@@ -19,7 +19,7 @@ describe('ReactComponent', function() {
   let container;
 
   function renderIntoDocument(input) {
-    return render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
+    return React.render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
   }
 
   beforeEach(() => {
@@ -33,7 +33,7 @@ describe('ReactComponent', function() {
   });
 
   afterEach(() => {
-    render(null, container);
+    React.render(null, container);
     container.innerHTML = '';
     document.body.removeChild(container);
   });
@@ -48,71 +48,6 @@ describe('ReactComponent', function() {
     expect(function() {
       ReactDOM.render(<div />, null);
     }).toThrow();
-  });
-
-  // it('should throw when supplying a ref outside of render method', function() {
-  //   var instance = <div ref="badDiv" />;
-  //   expect(function() {
-  //     instance = ReactTestUtils.renderIntoDocument(instance);
-  //   }).toThrow();
-  // });
-
-  it('should support refs on owned components', function() {
-    var innerObj = {};
-    var outerObj = {};
-
-    var Wrapper = React.createClass({
-      getObject: function() {
-        return this.props.object;
-      },
-
-      render: function() {
-        return <div>{this.props.children}</div>;
-      }
-    });
-
-    var Component = React.createClass({
-      render: function() {
-        var inner = <Wrapper object={innerObj} ref="inner" />;
-        var outer = (
-          <Wrapper object={outerObj} ref="outer">
-            {inner}
-          </Wrapper>
-        );
-        return outer;
-      },
-      componentDidMount: function() {
-        expect(this.refs.inner.getObject()).toEqual(innerObj);
-        expect(this.refs.outer.getObject()).toEqual(outerObj);
-      }
-    });
-
-    var instance = <Component />;
-
-    renderIntoDocument(instance);
-  });
-
-  it('should not have refs on unmounted components', function() {
-    var Parent = React.createClass({
-      render: function() {
-        return (
-          <Child>
-            <div ref="test" />
-          </Child>
-        );
-      },
-      componentDidMount: function() {
-        expect(this.refs && this.refs.test).toEqual(undefined);
-      }
-    });
-    var Child = React.createClass({
-      render: function() {
-        return <div />;
-      }
-    });
-
-    var instance = <Parent child={<span />} />;
-    renderIntoDocument(instance);
   });
 
   it('should support new-style refs', function() {
@@ -142,39 +77,6 @@ describe('ReactComponent', function() {
       componentDidMount: function() {
         expect(this.innerRef.getObject()).toEqual(innerObj);
         expect(this.outerRef.getObject()).toEqual(outerObj);
-        mounted = true;
-      }
-    });
-
-    var instance = <Component />;
-    renderIntoDocument(instance);
-    expect(mounted).toBe(true);
-  });
-
-  it('should support new-style refs with mixed-up owners', function() {
-    var Wrapper = React.createClass({
-      getTitle: function() {
-        return this.props.title;
-      },
-      render: function() {
-        return this.props.getContent();
-      }
-    });
-
-    var mounted = false;
-    var Component = React.createClass({
-      getInner: function() {
-        // (With old-style refs, it's impossible to get a ref to this div
-        // because Wrapper is the current owner when this function is called.)
-        return <div title="inner" ref={c => (this.innerRef = c)} />;
-      },
-      render: function() {
-        return <Wrapper title="wrapper" ref={c => (this.wrapperRef = c)} getContent={this.getInner} />;
-      },
-      componentDidMount: function() {
-        // Check .props.title to make sure we got the right elements back
-        expect(this.wrapperRef.getTitle()).toBe('wrapper');
-        expect(ReactDOM.findDOMNode(this.innerRef).title).toBe('inner');
         mounted = true;
       }
     });

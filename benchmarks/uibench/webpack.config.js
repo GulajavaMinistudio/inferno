@@ -15,8 +15,7 @@ module.exports = {
         test: /\.jsx?$/,
         loader: 'babel-loader',
         exclude: /node_modules/,
-        query: {
-          presets: [['es2015', { loose: true, modules: false }], 'stage-0'],
+        options: {
           plugins: [[require(__dirname + './../../node_modules/babel-plugin-inferno'), {imports: true}]]
         }
       },
@@ -39,6 +38,7 @@ module.exports = {
       'inferno-create-class': resolve('inferno-create-class'),
       'inferno-create-element': resolve('inferno-create-element'),
       'inferno-devtools': resolve('inferno-devtools'),
+      'inferno-hydrate': resolve('inferno-hydrate'),
       'inferno-extras': resolve('inferno-extras'),
       'inferno-hyperscript': resolve('inferno-hyperscript'),
       'inferno-mobx': resolve('inferno-mobx'),
@@ -57,6 +57,9 @@ module.exports = {
   plugins: [
     new webpack.DefinePlugin({ 'process.env': { NODE_ENV: JSON.stringify('production') } })
   ],
+  optimization: {
+    minimize: false
+  },
   devServer: {
     port: process.env.PORT || 8000
   }

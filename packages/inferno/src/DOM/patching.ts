@@ -1,140 +1,221 @@
-import { combineFrom, isFunction, isInvalid, isNullOrUndef, isString, NO_OP, throwError, warning } from 'inferno-shared';
+import { combineFrom, isFunction, isInvalid, isNullOrUndef } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
-import { directClone, options, VNode } from '../core/implementation';
-import { mount, mountArrayChildren, mountRef } from './mounting';
-import { remove, removeAllChildren, unmount } from './unmounting';
-import { EMPTY_OBJ, insertOrAppend, replaceChild } from './utils/common';
+import { directClone, options } from '../core/implementation';
+import { VNode } from '../core/types';
+import { mount, mountArrayChildren, mountTextContent } from './mounting';
+import { clearDOM, remove, removeAllChildren, unmount, unmountAllChildren } from './unmounting';
+import {
+  appendChild,
+  createDerivedState,
+  EMPTY_OBJ,
+  findDOMfromVNode,
+  insertOrAppend,
+  LIFECYCLE,
+  removeChild,
+  removeVNodeDOM,
+  replaceChild
+} from './utils/common';
 import { isControlledFormElement, processElement } from './wrappers/processElement';
 import { patchProp } from './props';
 import { handleComponentInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
+import { mountRef, unmountRef } from '../core/refs';
 
-function replaceWithNewNode(lastNode, nextNode, parentDom, context: Object, isSVG: boolean) {
-  unmount(lastNode);
-  replaceChild(parentDom, mount(nextNode, null, context, isSVG), lastNode.dom);
+function replaceWithNewNode(lastVNode, nextVNode, parentDOM: Element, context: Object, isSVG: boolean) {
+  unmount(lastVNode);
+
+  if ((nextVNode.flags & lastVNode.flags & VNodeFlags.DOMRef) !== 0) {
+    // Single DOM operation, when we have dom references available
+    mount(nextVNode, null, context, isSVG, null);
+    // Single DOM operation, when we have dom references available
+    replaceChild(parentDOM, nextVNode.dom, lastVNode.dom);
+  } else {
+    mount(nextVNode, parentDOM, context, isSVG, findDOMfromVNode(lastVNode));
+    removeVNodeDOM(lastVNode, parentDOM);
+  }
 }
 
-export function patch(lastVNode: VNode, nextVNode: VNode, parentDom: Element, context: Object, isSVG: boolean) {
-  const nextFlags = nextVNode.flags | 0;
+export function patch(lastVNode: VNode, nextVNode: VNode, parentDOM: Element, context: Object, isSVG: boolean, nextNode: Element | null) {
+  const nextFlags = (nextVNode.flags |= VNodeFlags.InUse);
 
-  if (lastVNode.flags !== nextFlags || nextFlags & VNodeFlags.ReCreate) {
-    replaceWithNewNode(lastVNode, nextVNode, parentDom, context, isSVG);
+  if (process.env.NODE_ENV !== 'production') {
+    if (isFunction(options.componentComparator) && lastVNode.flags & nextFlags & VNodeFlags.ComponentClass) {
+      if (options.componentComparator(lastVNode, nextVNode) === false) {
+        patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode);
+        return;
+      }
+    }
+  }
+
+  if (lastVNode.flags !== nextFlags || lastVNode.type !== nextVNode.type || lastVNode.key !== nextVNode.key || (nextFlags & VNodeFlags.ReCreate) > 0) {
+    if (lastVNode.flags & VNodeFlags.InUse) {
+      replaceWithNewNode(lastVNode, nextVNode, parentDOM, context, isSVG);
+    } else {
+      // Last vNode is not in use, it has crashed at application level. Just mount nextVNode and ignore last one
+      mount(nextVNode, parentDOM, context, isSVG, nextNode);
+    }
   } else if (nextFlags & VNodeFlags.Element) {
-    patchElement(lastVNode, nextVNode, parentDom, context, isSVG, nextFlags);
-  } else if (nextFlags & VNodeFlags.Component) {
-    patchComponent(lastVNode, nextVNode, parentDom, context, isSVG, (nextFlags & VNodeFlags.ComponentClass) > 0);
+    patchElement(lastVNode, nextVNode, context, isSVG, nextFlags);
+  } else if (nextFlags & VNodeFlags.ComponentClass) {
+    patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode);
+  } else if (nextFlags & VNodeFlags.ComponentFunction) {
+    patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSVG, nextNode);
   } else if (nextFlags & VNodeFlags.Text) {
     patchText(lastVNode, nextVNode);
   } else if (nextFlags & VNodeFlags.Void) {
     nextVNode.dom = lastVNode.dom;
+  } else if (nextFlags & VNodeFlags.Fragment) {
+    patchFragment(lastVNode, nextVNode, parentDOM, context, isSVG);
   } else {
     patchPortal(lastVNode, nextVNode, context);
   }
 }
 
-function patchContentEditableChildren(dom, nextVNode) {
-  if (dom.textContent !== nextVNode.children) {
-    dom.textContent = nextVNode.children;
+export function patchSingleTextChild(lastChildren, nextChildren, parentDOM: Element) {
+  if (lastChildren !== nextChildren) {
+    if (lastChildren !== '') {
+      (parentDOM.firstChild as Node).nodeValue = nextChildren;
+    } else {
+      parentDOM.textContent = nextChildren;
+    }
   }
 }
 
+function patchContentEditableChildren(dom, nextChildren) {
+  if (dom.textContent !== nextChildren) {
+    dom.textContent = nextChildren;
+  }
+}
+
+function patchFragment(lastVNode: VNode, nextVNode: VNode, parentDOM: Element, context: Object, isSVG: boolean) {
+  const lastChildren = lastVNode.children as VNode[];
+  let nextNode;
+
+  if ((nextVNode.childFlags & ChildFlags.HasVNodeChildren) === 0 && (nextVNode.children as VNode[]).length > lastChildren.length) {
+    nextNode = (findDOMfromVNode(lastChildren[lastChildren.length - 1]) as Element).nextSibling;
+  }
+
+  patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastChildren, nextVNode.children, parentDOM, context, isSVG, nextNode, lastVNode);
+}
+
 function patchPortal(lastVNode: VNode, nextVNode: VNode, context) {
-  const lastContainer = lastVNode.type as Element;
-  const nextContainer = nextVNode.type as Element;
+  const lastContainer = lastVNode.ref as Element;
+  const nextContainer = nextVNode.ref as Element;
   const nextChildren = nextVNode.children as VNode;
 
-  patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastVNode.children as VNode, nextChildren, lastContainer as Element, context, false);
+  patchChildren(
+    lastVNode.childFlags,
+    nextVNode.childFlags,
+    lastVNode.children as VNode,
+    nextChildren,
+    lastContainer as Element,
+    context,
+    false,
+    null,
+    lastVNode
+  );
 
   nextVNode.dom = lastVNode.dom;
 
   if (lastContainer !== nextContainer && !isInvalid(nextChildren)) {
     const node = nextChildren.dom as Element;
 
-    lastContainer.removeChild(node);
-    nextContainer.appendChild(node);
+    removeChild(lastContainer, node);
+    appendChild(nextContainer, node);
   }
 }
 
-export function patchElement(lastVNode: VNode, nextVNode: VNode, parentDom: Element | null, context: Object, isSVG: boolean, nextFlags: number) {
-  const nextTag = nextVNode.type;
+export function patchElement(lastVNode: VNode, nextVNode: VNode, context: Object, isSVG: boolean, nextFlags: VNodeFlags) {
+  const dom = lastVNode.dom as Element;
+  const lastProps = lastVNode.props;
+  const nextProps = nextVNode.props;
+  let isFormElement = false;
+  let hasControlledValue = false;
+  let nextPropsOrEmpty;
 
-  if (lastVNode.type !== nextTag) {
-    replaceWithNewNode(lastVNode, nextVNode, parentDom, context, isSVG);
+  nextVNode.dom = dom;
+  isSVG = isSVG || (nextFlags & VNodeFlags.SvgElement) > 0;
+
+  // inlined patchProps  -- starts --
+  if (lastProps !== nextProps) {
+    const lastPropsOrEmpty = lastProps || EMPTY_OBJ;
+    nextPropsOrEmpty = nextProps || (EMPTY_OBJ as any);
+
+    if (nextPropsOrEmpty !== EMPTY_OBJ) {
+      isFormElement = (nextFlags & VNodeFlags.FormElement) > 0;
+      if (isFormElement) {
+        hasControlledValue = isControlledFormElement(nextPropsOrEmpty);
+      }
+
+      for (const prop in nextPropsOrEmpty) {
+        const lastValue = lastPropsOrEmpty[prop];
+        const nextValue = nextPropsOrEmpty[prop];
+        if (lastValue !== nextValue) {
+          patchProp(prop, lastValue, nextValue, dom, isSVG, hasControlledValue, lastVNode);
+        }
+      }
+    }
+    if (lastPropsOrEmpty !== EMPTY_OBJ) {
+      for (const prop in lastPropsOrEmpty) {
+        if (!nextPropsOrEmpty.hasOwnProperty(prop) && !isNullOrUndef(lastPropsOrEmpty[prop])) {
+          patchProp(prop, lastPropsOrEmpty[prop], null, dom, isSVG, hasControlledValue, lastVNode);
+        }
+      }
+    }
+  }
+  const nextChildren = nextVNode.children;
+  const nextClassName = nextVNode.className;
+  const nextRef = nextVNode.ref;
+  const lastRef = lastVNode.ref;
+
+  // inlined patchProps  -- ends --
+  if (lastVNode.className !== nextClassName) {
+    if (isNullOrUndef(nextClassName)) {
+      dom.removeAttribute('class');
+    } else if (isSVG) {
+      dom.setAttribute('class', nextClassName);
+    } else {
+      dom.className = nextClassName;
+    }
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    validateKeys(nextVNode);
+  }
+  if (nextFlags & VNodeFlags.ContentEditable) {
+    patchContentEditableChildren(dom, nextChildren);
   } else {
-    const dom = lastVNode.dom as Element;
-    const lastProps = lastVNode.props;
-    const nextProps = nextVNode.props;
-    let isFormElement = false;
-    let hasControlledValue = false;
-    let nextPropsOrEmpty;
+    patchChildren(
+      lastVNode.childFlags,
+      nextVNode.childFlags,
+      lastVNode.children,
+      nextChildren,
+      dom,
+      context,
+      isSVG && nextVNode.type !== 'foreignObject',
+      null,
+      lastVNode
+    );
+  }
 
-    nextVNode.dom = dom;
-    isSVG = isSVG || (nextFlags & VNodeFlags.SvgElement) > 0;
+  if (isFormElement) {
+    processElement(nextFlags, nextVNode, dom, nextPropsOrEmpty, false, hasControlledValue);
+  }
 
-    // inlined patchProps  -- starts --
-    if (lastProps !== nextProps) {
-      const lastPropsOrEmpty = lastProps || EMPTY_OBJ;
-      nextPropsOrEmpty = nextProps || (EMPTY_OBJ as any);
+  if (lastRef !== nextRef) {
+    unmountRef(lastRef);
+    mountRef(nextRef, dom);
+  }
+}
 
-      if (nextPropsOrEmpty !== EMPTY_OBJ) {
-        isFormElement = (nextFlags & VNodeFlags.FormElement) > 0;
-        if (isFormElement) {
-          hasControlledValue = isControlledFormElement(nextPropsOrEmpty);
-        }
+function replaceOneWithMany(lastChildren, nextChildren, parentDOM, context, isSVG: boolean) {
+  const oldDOM = findDOMfromVNode(lastChildren);
 
-        for (const prop in nextPropsOrEmpty) {
-          const lastValue = lastPropsOrEmpty[prop];
-          const nextValue = nextPropsOrEmpty[prop];
-          if (lastValue !== nextValue) {
-            patchProp(prop, lastValue, nextValue, dom, isSVG, hasControlledValue, lastVNode);
-          }
-        }
-      }
-      if (lastPropsOrEmpty !== EMPTY_OBJ) {
-        for (const prop in lastPropsOrEmpty) {
-          if (!nextPropsOrEmpty.hasOwnProperty(prop) && !isNullOrUndef(lastPropsOrEmpty[prop])) {
-            patchProp(prop, lastPropsOrEmpty[prop], null, dom, isSVG, hasControlledValue, lastVNode);
-          }
-        }
-      }
-    }
-    const lastChildren = lastVNode.children;
-    const nextChildren = nextVNode.children;
-    const nextRef = nextVNode.ref;
-    const lastClassName = lastVNode.className;
-    const nextClassName = nextVNode.className;
+  unmount(lastChildren);
+  mountArrayChildren(nextChildren, parentDOM, context, isSVG, oldDOM);
 
-    if (process.env.NODE_ENV !== 'production') {
-      validateKeys(nextVNode);
-    }
-    if (nextFlags & VNodeFlags.ContentEditable) {
-      patchContentEditableChildren(dom, nextChildren);
-    } else {
-      patchChildren(lastVNode.childFlags, nextVNode.childFlags, lastChildren, nextChildren, dom, context, isSVG && nextTag !== 'foreignObject');
-    }
-
-    if (isFormElement) {
-      processElement(nextFlags, nextVNode, dom, nextPropsOrEmpty, false, hasControlledValue);
-    }
-    // inlined patchProps  -- ends --
-    if (lastClassName !== nextClassName) {
-      if (isNullOrUndef(nextClassName)) {
-        dom.removeAttribute('class');
-      } else if (isSVG) {
-        dom.setAttribute('class', nextClassName);
-      } else {
-        dom.className = nextClassName;
-      }
-    }
-    if (isFunction(nextRef) && lastVNode.ref !== nextRef) {
-      mountRef(dom as Element, nextRef);
-    } else {
-      if (process.env.NODE_ENV !== 'production') {
-        if (isString(nextRef)) {
-          throwError('string "refs" are not supported in Inferno 1.0. Use callback "refs" instead.');
-        }
-      }
-    }
+  if (oldDOM) {
+    removeChild(parentDOM, oldDOM as Element);
   }
 }
 
@@ -145,88 +226,163 @@ function patchChildren(
   nextChildren,
   parentDOM: Element,
   context: Object,
-  isSVG: boolean
+  isSVG: boolean,
+  nextNode: Element | null,
+  parentVNode: VNode
 ) {
   switch (lastChildFlags) {
     case ChildFlags.HasVNodeChildren:
       switch (nextChildFlags) {
         case ChildFlags.HasVNodeChildren:
-          patch(lastChildren, nextChildren, parentDOM, context, isSVG);
+          patch(lastChildren, nextChildren, parentDOM, context, isSVG, nextNode);
           break;
         case ChildFlags.HasInvalidChildren:
           remove(lastChildren, parentDOM);
           break;
+        case ChildFlags.HasTextChildren:
+          unmount(lastChildren);
+          mountTextContent(parentDOM, nextChildren);
+          break;
         default:
-          remove(lastChildren, parentDOM);
-          mountArrayChildren(nextChildren, parentDOM, context, isSVG);
+          replaceOneWithMany(lastChildren, nextChildren, parentDOM, context, isSVG);
           break;
       }
       break;
     case ChildFlags.HasInvalidChildren:
       switch (nextChildFlags) {
         case ChildFlags.HasVNodeChildren:
-          mount(nextChildren, parentDOM, context, isSVG);
+          mount(nextChildren, parentDOM, context, isSVG, nextNode);
           break;
         case ChildFlags.HasInvalidChildren:
           break;
+        case ChildFlags.HasTextChildren:
+          mountTextContent(parentDOM, nextChildren);
+          break;
         default:
-          mountArrayChildren(nextChildren, parentDOM, context, isSVG);
+          mountArrayChildren(nextChildren, parentDOM, context, isSVG, nextNode);
+          break;
+      }
+      break;
+    case ChildFlags.HasTextChildren:
+      switch (nextChildFlags) {
+        case ChildFlags.HasTextChildren:
+          patchSingleTextChild(lastChildren, nextChildren, parentDOM);
+          break;
+        case ChildFlags.HasVNodeChildren:
+          clearDOM(parentDOM);
+          mount(nextChildren, parentDOM, context, isSVG, nextNode);
+          break;
+        case ChildFlags.HasInvalidChildren:
+          clearDOM(parentDOM);
+          break;
+        default:
+          clearDOM(parentDOM);
+          mountArrayChildren(nextChildren, parentDOM, context, isSVG, nextNode);
           break;
       }
       break;
     default:
-      if (nextChildFlags & ChildFlags.MultipleChildren) {
-        const lastLength = lastChildren.length;
-        const nextLength = nextChildren.length;
+      switch (nextChildFlags) {
+        case ChildFlags.HasTextChildren:
+          unmountAllChildren(lastChildren);
+          mountTextContent(parentDOM, nextChildren);
+          break;
+        case ChildFlags.HasVNodeChildren:
+          removeAllChildren(parentDOM, parentVNode, lastChildren);
+          mount(nextChildren, parentDOM, context, isSVG, nextNode);
+          break;
+        case ChildFlags.HasInvalidChildren:
+          removeAllChildren(parentDOM, parentVNode, lastChildren);
+          break;
+        default:
+          const lastLength = lastChildren.length;
+          const nextLength = nextChildren.length;
 
-        // Fast path's for both algorithms
-        if (lastLength === 0) {
-          if (nextLength > 0) {
-            mountArrayChildren(nextChildren, parentDOM, context, isSVG);
+          // Fast path's for both algorithms
+          if (lastLength === 0) {
+            if (nextLength > 0) {
+              mountArrayChildren(nextChildren, parentDOM, context, isSVG, nextNode);
+            }
+          } else if (nextLength === 0) {
+            removeAllChildren(parentDOM, parentVNode, lastChildren);
+          } else if (nextChildFlags === ChildFlags.HasKeyedChildren && lastChildFlags === ChildFlags.HasKeyedChildren) {
+            patchKeyedChildren(lastChildren, nextChildren, parentDOM, context, isSVG, lastLength, nextLength, nextNode, parentVNode);
+          } else {
+            patchNonKeyedChildren(lastChildren, nextChildren, parentDOM, context, isSVG, lastLength, nextLength, nextNode);
           }
-        } else if (nextLength === 0) {
-          removeAllChildren(parentDOM, lastChildren);
-        } else if (nextChildFlags === ChildFlags.HasKeyedChildren && lastChildFlags === ChildFlags.HasKeyedChildren) {
-          patchKeyedChildren(lastChildren, nextChildren, parentDOM, context, isSVG, lastLength, nextLength);
-        } else {
-          patchNonKeyedChildren(lastChildren, nextChildren, parentDOM, context, isSVG, lastLength, nextLength);
-        }
-      } else if (nextChildFlags === ChildFlags.HasInvalidChildren) {
-        removeAllChildren(parentDOM, lastChildren);
-      } else if (nextChildFlags === ChildFlags.HasVNodeChildren) {
-        removeAllChildren(parentDOM, lastChildren);
-        mount(nextChildren, parentDOM, context, isSVG);
+          break;
       }
-      break;
   }
 }
 
-export function updateClassComponent(
-  instance,
-  nextState,
-  nextVNode: VNode,
-  nextProps,
-  parentDom,
-  context,
-  isSVG: boolean,
-  force: boolean,
-  fromSetState: boolean
-) {
+function createDidUpdate(instance, lastProps, lastState, snapshot) {
+  LIFECYCLE.push(() => instance.componentDidUpdate(lastProps, lastState, snapshot));
+}
+
+export function updateClassComponent(instance, nextState, nextProps, parentDOM: Element, context, isSVG: boolean, force: boolean, nextNode: Element | null) {
   const lastState = instance.state;
   const lastProps = instance.props;
-  nextVNode.children = instance;
-  let renderOutput;
+  const usesNewAPI = instance.$N;
+  const hasSCU = isFunction(instance.shouldComponentUpdate);
 
-  if (instance.$UN) {
-    if (process.env.NODE_ENV !== 'production') {
-      warning(
-        'Inferno Error: Can only update a mounted or mounting component. This usually means you called setState() or forceUpdate() on an unmounted component. This is a no-op.'
-      );
-    }
-    return;
+  if (usesNewAPI) {
+    nextState = createDerivedState(instance, nextProps, nextState !== lastState ? combineFrom(lastState, nextState) : nextState);
   }
-  if (lastProps !== nextProps || nextProps === EMPTY_OBJ) {
-    if (!fromSetState && isFunction(instance.componentWillReceiveProps)) {
+
+  if (force || !hasSCU || (hasSCU && (instance.shouldComponentUpdate as Function)(nextProps, nextState, context))) {
+    if (!usesNewAPI && isFunction(instance.componentWillUpdate)) {
+      instance.componentWillUpdate(nextProps, nextState, context);
+    }
+
+    instance.props = nextProps;
+    instance.state = nextState;
+    instance.context = context;
+
+    const renderOutput = instance.render(nextProps, nextState, context);
+    let snapshot = null;
+
+    if (usesNewAPI && isFunction(instance.getSnapshotBeforeUpdate)) {
+      snapshot = instance.getSnapshotBeforeUpdate(lastProps, lastState);
+    }
+
+    let childContext;
+    if (isFunction(instance.getChildContext)) {
+      childContext = instance.getChildContext();
+    }
+    if (isNullOrUndef(childContext)) {
+      childContext = context;
+    } else {
+      childContext = combineFrom(context, childContext);
+    }
+    instance.$CX = childContext;
+    const nextInput = handleComponentInput(renderOutput);
+
+    patch(instance.$LI, nextInput, parentDOM, childContext, isSVG, nextNode);
+
+    // Dont update Last input, until patch has been succesfully executed
+    instance.$LI = nextInput;
+
+    if (isFunction(instance.componentDidUpdate)) {
+      createDidUpdate(instance, lastProps, lastState, snapshot);
+    }
+  } else {
+    instance.props = nextProps;
+    instance.state = nextState;
+    instance.context = context;
+  }
+}
+
+function patchClassComponent(lastVNode, nextVNode, parentDOM, context, isSVG: boolean, nextNode: Element | null) {
+  const nextProps = nextVNode.props || EMPTY_OBJ;
+  const nextRef = nextVNode.ref;
+  const instance = (nextVNode.children = lastVNode.children);
+  const lastRef = lastVNode.ref;
+  let nextState = instance.state;
+
+  instance.$UPD = true;
+
+  if (!instance.$N) {
+    if (isFunction(instance.componentWillReceiveProps)) {
       instance.$BR = true;
       instance.componentWillReceiveProps(nextProps, context);
       // If instance component was removed during its own update do nothing.
@@ -241,108 +397,42 @@ export function updateClassComponent(
       instance.$PS = null;
     }
   }
-  /* Update if scu is not defined, or it returns truthy value or force */
-  const hasSCU = Boolean(instance.shouldComponentUpdate);
 
-  if (force || !hasSCU || (hasSCU && (instance.shouldComponentUpdate as Function)(nextProps, nextState, context))) {
-    if (isFunction(instance.componentWillUpdate)) {
-      instance.$BS = true;
-      instance.componentWillUpdate(nextProps, nextState, context);
-      instance.$BS = false;
-    }
+  updateClassComponent(instance, nextState, nextProps, parentDOM, context, isSVG, false, nextNode);
 
-    instance.props = nextProps;
-    instance.state = nextState;
-    instance.context = context;
-
-    if (isFunction(options.beforeRender)) {
-      options.beforeRender(instance);
-    }
-    renderOutput = instance.render(nextProps, nextState, context);
-
-    if (isFunction(options.afterRender)) {
-      options.afterRender(instance);
-    }
-
-    const didUpdate = renderOutput !== NO_OP;
-
-    let childContext;
-    if (isFunction(instance.getChildContext)) {
-      childContext = instance.getChildContext();
-    }
-    if (isNullOrUndef(childContext)) {
-      childContext = context;
-    } else {
-      childContext = combineFrom(context, childContext);
-    }
-    instance.$CX = childContext;
-
-    if (didUpdate) {
-      const lastInput = instance.$LI;
-      const nextInput = handleComponentInput(renderOutput, nextVNode);
-      patch(lastInput, nextInput, parentDom, childContext, isSVG);
-      instance.$LI = nextInput;
-      if (isFunction(instance.componentDidUpdate)) {
-        instance.componentDidUpdate(lastProps, lastState);
-      }
-    }
-  } else {
-    instance.props = nextProps;
-    instance.state = nextState;
-    instance.context = context;
+  if (lastRef !== nextRef) {
+    unmountRef(lastRef);
+    mountRef(nextRef, instance);
   }
-  nextVNode.dom = instance.$LI.dom;
+
+  instance.$UPD = false;
 }
 
-function patchComponent(lastVNode, nextVNode, parentDom, context, isSVG: boolean, isClass: boolean): void {
-  const nextType = nextVNode.type;
-  const lastKey = lastVNode.key;
-  const nextKey = nextVNode.key;
+function patchFunctionalComponent(lastVNode, nextVNode, parentDOM, context, isSVG: boolean, nextNode: Element | null) {
+  let shouldUpdate: boolean = true;
+  const nextProps = nextVNode.props || EMPTY_OBJ;
+  const nextRef = nextVNode.ref;
+  const lastProps = lastVNode.props;
+  const nextHooksDefined = !isNullOrUndef(nextRef);
+  const lastInput = lastVNode.children;
 
-  if (lastVNode.type !== nextType || lastKey !== nextKey) {
-    replaceWithNewNode(lastVNode, nextVNode, parentDom, context, isSVG);
-  } else {
-    const nextProps = nextVNode.props || EMPTY_OBJ;
+  if (nextHooksDefined && isFunction(nextRef.onComponentShouldUpdate)) {
+    shouldUpdate = nextRef.onComponentShouldUpdate(lastProps, nextProps);
+  }
 
-    if (isClass) {
-      const instance = lastVNode.children;
-      instance.$UPD = true;
-      instance.$V = nextVNode;
-      updateClassComponent(instance, instance.state, nextVNode, nextProps, parentDom, context, isSVG, false, false);
-      instance.$UPD = false;
-    } else {
-      let shouldUpdate: any = true;
-      const lastProps = lastVNode.props;
-      const nextHooks = nextVNode.ref;
-      const nextHooksDefined = !isNullOrUndef(nextHooks);
-      const lastInput = lastVNode.children;
-
-      nextVNode.dom = lastVNode.dom;
-      nextVNode.children = lastInput;
-
-      if (nextHooksDefined && isFunction(nextHooks.onComponentShouldUpdate)) {
-        shouldUpdate = nextHooks.onComponentShouldUpdate(lastProps, nextProps);
-      }
-
-      if (shouldUpdate !== false) {
-        if (nextHooksDefined && isFunction(nextHooks.onComponentWillUpdate)) {
-          nextHooks.onComponentWillUpdate(lastProps, nextProps);
-        }
-        let nextInput = nextType(nextProps, context);
-
-        if (nextInput !== NO_OP) {
-          nextInput = handleComponentInput(nextInput, nextVNode);
-          patch(lastInput, nextInput, parentDom, context, isSVG);
-          nextVNode.children = nextInput;
-          nextVNode.dom = nextInput.dom;
-          if (nextHooksDefined && isFunction(nextHooks.onComponentDidUpdate)) {
-            nextHooks.onComponentDidUpdate(lastProps, nextProps);
-          }
-        }
-      } else if (lastInput.flags & VNodeFlags.Component) {
-        lastInput.parentVNode = nextVNode;
-      }
+  if (shouldUpdate !== false) {
+    if (nextHooksDefined && isFunction(nextRef.onComponentWillUpdate)) {
+      nextRef.onComponentWillUpdate(lastProps, nextProps);
     }
+    const nextInput = handleComponentInput(nextVNode.type(nextProps, context));
+
+    patch(lastInput, nextInput, parentDOM, context, isSVG, nextNode);
+    nextVNode.children = nextInput;
+    if (nextHooksDefined && isFunction(nextRef.onComponentDidUpdate)) {
+      nextRef.onComponentDidUpdate(lastProps, nextProps);
+    }
+  } else {
+    nextVNode.children = lastInput;
   }
 }
 
@@ -357,7 +447,16 @@ function patchText(lastVNode: VNode, nextVNode: VNode) {
   nextVNode.dom = dom;
 }
 
-function patchNonKeyedChildren(lastChildren, nextChildren, dom, context: Object, isSVG: boolean, lastChildrenLength: number, nextChildrenLength: number) {
+function patchNonKeyedChildren(
+  lastChildren,
+  nextChildren,
+  dom,
+  context: Object,
+  isSVG: boolean,
+  lastChildrenLength: number,
+  nextChildrenLength: number,
+  nextNode: Element | null
+) {
   const commonLength = lastChildrenLength > nextChildrenLength ? nextChildrenLength : lastChildrenLength;
   let i = 0;
   let nextChild;
@@ -367,21 +466,21 @@ function patchNonKeyedChildren(lastChildren, nextChildren, dom, context: Object,
     nextChild = nextChildren[i];
     lastChild = lastChildren[i];
 
-    if (nextChild.dom) {
+    if (nextChild.flags & VNodeFlags.InUse) {
       nextChild = nextChildren[i] = directClone(nextChild);
     }
 
-    patch(lastChild, nextChild, dom, context, isSVG);
+    patch(lastChild, nextChild, dom, context, isSVG, nextNode);
     lastChildren[i] = nextChild;
   }
   if (lastChildrenLength < nextChildrenLength) {
     for (i = commonLength; i < nextChildrenLength; i++) {
       nextChild = nextChildren[i];
 
-      if (nextChild.dom) {
+      if (nextChild.flags & VNodeFlags.InUse) {
         nextChild = nextChildren[i] = directClone(nextChild);
       }
-      mount(nextChild, dom, context, isSVG);
+      mount(nextChild, dom, context, isSVG, nextNode);
     }
   } else if (lastChildrenLength > nextChildrenLength) {
     for (i = commonLength; i < lastChildrenLength; i++) {
@@ -390,7 +489,17 @@ function patchNonKeyedChildren(lastChildren, nextChildren, dom, context: Object,
   }
 }
 
-function patchKeyedChildren(a: VNode[], b: VNode[], dom, context, isSVG: boolean, aLength: number, bLength: number) {
+function patchKeyedChildren(
+  a: VNode[],
+  b: VNode[],
+  dom,
+  context,
+  isSVG: boolean,
+  aLength: number,
+  bLength: number,
+  outerEdge: Element | null,
+  parentVNode: VNode
+) {
   let aEnd = aLength - 1;
   let bEnd = bLength - 1;
   let i: number;
@@ -398,16 +507,17 @@ function patchKeyedChildren(a: VNode[], b: VNode[], dom, context, isSVG: boolean
   let aNode: VNode = a[j];
   let bNode: VNode = b[j];
   let nextPos: number;
+  let nextNode;
 
   // Step 1
   // tslint:disable-next-line
   outer: {
     // Sync nodes with the same key at the beginning.
     while (aNode.key === bNode.key) {
-      if (bNode.dom) {
+      if (bNode.flags & VNodeFlags.InUse) {
         b[j] = bNode = directClone(bNode);
       }
-      patch(aNode, bNode, dom, context, isSVG);
+      patch(aNode, bNode, dom, context, isSVG, outerEdge);
       a[j] = bNode;
       j++;
       if (j > aEnd || j > bEnd) {
@@ -422,10 +532,10 @@ function patchKeyedChildren(a: VNode[], b: VNode[], dom, context, isSVG: boolean
 
     // Sync nodes with the same key at the end.
     while (aNode.key === bNode.key) {
-      if (bNode.dom) {
+      if (bNode.flags & VNodeFlags.InUse) {
         b[bEnd] = bNode = directClone(bNode);
       }
-      patch(aNode, bNode, dom, context, isSVG);
+      patch(aNode, bNode, dom, context, isSVG, outerEdge);
       a[aEnd] = bNode;
       aEnd--;
       bEnd--;
@@ -440,14 +550,15 @@ function patchKeyedChildren(a: VNode[], b: VNode[], dom, context, isSVG: boolean
   if (j > aEnd) {
     if (j <= bEnd) {
       nextPos = bEnd + 1;
-      const nextNode = nextPos < bLength ? b[nextPos].dom : null;
+      nextNode = nextPos < bLength ? findDOMfromVNode(b[nextPos]) : outerEdge;
+
       while (j <= bEnd) {
         bNode = b[j];
-        if (bNode.dom) {
+        if (bNode.flags & VNodeFlags.InUse) {
           b[j] = bNode = directClone(bNode);
         }
         j++;
-        insertOrAppend(dom, mount(bNode, null, context, isSVG), nextNode);
+        mount(bNode, dom, context, isSVG, nextNode);
       }
     }
   } else if (j > bEnd) {
@@ -489,10 +600,10 @@ function patchKeyedChildren(a: VNode[], b: VNode[], dom, context, isSVG: boolean
               } else {
                 pos = j;
               }
-              if (bNode.dom) {
+              if (bNode.flags & VNodeFlags.InUse) {
                 b[j] = bNode = directClone(bNode);
               }
-              patch(aNode, bNode, dom, context, isSVG);
+              patch(aNode, bNode, dom, context, isSVG, outerEdge);
               patched++;
               break;
             }
@@ -533,10 +644,10 @@ function patchKeyedChildren(a: VNode[], b: VNode[], dom, context, isSVG: boolean
             } else {
               pos = j;
             }
-            if (bNode.dom) {
+            if (bNode.flags & VNodeFlags.InUse) {
               b[j] = bNode = directClone(bNode);
             }
-            patch(aNode, bNode, dom, context, isSVG);
+            patch(aNode, bNode, dom, context, isSVG, outerEdge);
             patched++;
           } else if (!canRemoveWholeContent) {
             remove(aNode, dom);
@@ -548,8 +659,8 @@ function patchKeyedChildren(a: VNode[], b: VNode[], dom, context, isSVG: boolean
     }
     // fast-path: if nothing patched remove all old and add all new
     if (canRemoveWholeContent) {
-      removeAllChildren(dom, a);
-      mountArrayChildren(b, dom, context, isSVG);
+      removeAllChildren(dom, parentVNode, a);
+      mountArrayChildren(b, dom, context, isSVG, outerEdge);
     } else {
       if (moved) {
         const seq = lis_algorithm(sources);
@@ -558,16 +669,24 @@ function patchKeyedChildren(a: VNode[], b: VNode[], dom, context, isSVG: boolean
           if (sources[i] === 0) {
             pos = i + bStart;
             bNode = b[pos];
-            if (bNode.dom) {
+            if (bNode.flags & VNodeFlags.InUse) {
               b[pos] = bNode = directClone(bNode);
             }
             nextPos = pos + 1;
-            insertOrAppend(dom, mount(bNode, null, context, isSVG), nextPos < bLength ? b[nextPos].dom : null);
+            mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos]) : outerEdge);
           } else if (j < 0 || i !== seq[j]) {
             pos = i + bStart;
             bNode = b[pos];
             nextPos = pos + 1;
-            insertOrAppend(dom, bNode.dom, nextPos < bLength ? b[nextPos].dom : null);
+            nextNode = nextPos < bLength ? findDOMfromVNode(b[nextPos]) : outerEdge;
+
+            if (bNode.flags & VNodeFlags.Fragment && bNode.childFlags & ChildFlags.MultipleChildren) {
+              for (let k = 0, len = (bNode.children as VNode[]).length; k < len; k++) {
+                insertOrAppend(dom, findDOMfromVNode((bNode.children as VNode[])[k]), nextNode);
+              }
+            } else {
+              insertOrAppend(dom, findDOMfromVNode(bNode), nextNode);
+            }
           } else {
             j--;
           }
@@ -579,11 +698,11 @@ function patchKeyedChildren(a: VNode[], b: VNode[], dom, context, isSVG: boolean
           if (sources[i] === 0) {
             pos = i + bStart;
             bNode = b[pos];
-            if (bNode.dom) {
+            if (bNode.flags & VNodeFlags.InUse) {
               b[pos] = bNode = directClone(bNode);
             }
             nextPos = pos + 1;
-            insertOrAppend(dom, mount(bNode, null, context, isSVG), nextPos < bLength ? b[nextPos].dom : null);
+            mount(bNode, dom, context, isSVG, nextPos < bLength ? findDOMfromVNode(b[nextPos]) : outerEdge);
           }
         }
       }

@@ -8,7 +8,7 @@
  */
 
 import React from 'inferno-compat';
-import { createComponentVNode, render } from 'inferno';
+import { createComponentVNode } from 'inferno';
 import { Wrapper } from 'inferno-test-utils';
 import { VNodeFlags } from 'inferno-vnode-flags';
 
@@ -18,7 +18,7 @@ describe('Render Select with multiple values', function() {
   let container;
 
   function renderIntoDocument(input) {
-    return render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
+    return React.render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
   }
 
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe('Render Select with multiple values', function() {
   });
 
   afterEach(() => {
-    render(null, container);
+    React.render(null, container);
     container.innerHTML = '';
     document.body.removeChild(container);
   });
@@ -41,7 +41,7 @@ describe('Render Select with multiple values', function() {
     render() {
       return (
         <div>
-          <select value={this.state.selectedValue} ref="selectNode" id="selectNode" multiple>
+          <select value={this.state.selectedValue} id="selectNode" multiple>
             <option value={1}>1</option>
             <option value={2}>2</option>
             <option value={3}>3</option>
@@ -66,7 +66,7 @@ describe('Render Select with multiple values', function() {
 describe('Render Select with single value', function() {
   let container;
   function renderIntoDocument(input) {
-    return render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
+    return React.render(createComponentVNode(VNodeFlags.ComponentClass, Wrapper, { children: input }), container);
   }
 
   beforeEach(() => {
@@ -75,7 +75,7 @@ describe('Render Select with single value', function() {
   });
 
   afterEach(() => {
-    render(null, container);
+    React.render(null, container);
     container.innerHTML = '';
     document.body.removeChild(container);
   });
@@ -89,7 +89,7 @@ describe('Render Select with single value', function() {
     render() {
       return (
         <div>
-          <select value={this.state.selectedValue} ref="selectNode" id="selectNode">
+          <select value={this.state.selectedValue} id="selectNode">
             <option value={1}>1</option>
             <option value={2}>2</option>
             <option value={3}>3</option>

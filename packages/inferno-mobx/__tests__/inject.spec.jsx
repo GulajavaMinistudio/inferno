@@ -334,7 +334,7 @@ describe('inject based context', () => {
     expect(container.querySelector('h1').textContent).toBe('Veria');
     done();
   });
-  // TODO: fix this!
+
   // it('using a custom injector is not too reactive', done => {
   //   let listRender = 0;
   //   let itemRender = 0;
@@ -381,9 +381,7 @@ describe('inject based context', () => {
   //   @connect(({state}, {item}) => {
   //     injectRender++;
   //     if (injectRender > 6) {
-  //       // debugger;
   //     }
-  //     debugger;
   //     return ({
   //       // Using
   //       // highlighted: expr(() => state.isHighlighted(item)) // seems to fix the problem
@@ -393,7 +391,6 @@ describe('inject based context', () => {
   //   })
   //   class ItemComponent extends Component {
   //     highlight = () => {
-  //       debugger;
   //       const {item, highlight} = this.props;
   //       highlight(item);
   //     };
@@ -416,7 +413,6 @@ describe('inject based context', () => {
   //   expect(injectRender).toBe(6);
   //   expect(itemRender).toBe(6);
   //
-  //   debugger;
   //
   //   container.querySelectorAll(".hl_ItemB").forEach(e => e.click());
   //   setTimeout(() => {

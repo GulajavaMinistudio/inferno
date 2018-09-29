@@ -8,6 +8,7 @@
 [![Slack Status](https://inferno-slack.herokuapp.com/badge.svg)](https://inferno-slack.herokuapp.com/)
 [![gzip size](http://img.badgesize.io/https://unpkg.com/inferno/dist/inferno.min.js?compression=gzip)](https://unpkg.com/inferno/dist/inferno.min.js)
 [![Backers on Open Collective](https://opencollective.com/inferno/backers/badge.svg)](#backers) [![Sponsors on Open Collective](https://opencollective.com/inferno/sponsors/badge.svg)](#sponsors)
+[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lernajs.io/)
 
 Inferno is an insanely fast, React-like library for building high-performance user interfaces on both the client and server.
 
@@ -162,6 +163,7 @@ render(
 If you have built something using Inferno you can add them here:
 
 - [**Simple Clock** (@JSFiddle)](https://jsfiddle.net/pzmqLjo7/)
+- [**Simple JS Counter** (@github/scorsi)](https://github.com/scorsi/simple-counter-inferno-cerebral-fusebox) : SSR Inferno (view) + Cerebral (state manager) + FuseBox (build system/bundler)
 
 
 ## Getting Started
@@ -234,7 +236,7 @@ Inferno now has bindings available for some of the major state management librar
 
 - Redux via [`inferno-redux`](https://github.com/infernojs/inferno/tree/dev/packages/inferno-redux)
 - MobX via [`inferno-mobx`](https://github.com/infernojs/inferno/tree/dev/packages/inferno-mobx)
-- Cerebral via [`cerebral-view-inferno`](https://github.com/cerebral/cerebral-view-inferno)
+- Cerebral via [`@cerebral/inferno`](https://github.com/cerebral/cerebral/tree/master/packages/node_modules/@cerebral/inferno)
 
 ## JSX
 
@@ -643,13 +645,30 @@ hydrate(<div />, document.getElementById("app"));
 
 Same as `render()`, but is used to hydrate a container whose HTML contents were rendered by `inferno-server`. Inferno will attempt to attach event listeners to the existing markup.
 
-### `findDOMNode` (package: `inferno-compat`)
-This feature has been moved from inferno to inferno-compat in v4 forward. No options are needed anymore.
+### `options.componentComparator` ( package `inferno`) DEV only
+
+This option can be used during development to create custom component comparator method.
+This option will be called on every Component update.
+It gets two parameters: lastVNode and nextVNode. When it returns `true` lastVNode will be replaced with nextVNode.
+If anything else than `true` is returned it falls to normal behavior.
+
+```javascript
+import {options} from 'inferno';
+
+options.componentComparator = function (lastVNode, nextVNode) {
+    /* custom logic */
+    return true; // Replaces lastVNode with nextVNode
+}
+```
+
+### `findDOMNode` (package: `inferno-extras`)
+This feature has been moved from inferno to inferno-compat in v6. No options are needed anymore.
 
 Note: we recommend using a `ref` callback on a component to find its instance, rather than using `findDOMNode()`. `findDOMNode()` cannot be used on functional components.
 
 If a component has been mounted into the DOM, this returns the corresponding native browser DOM element. This method is useful for reading values out of the DOM, such as form field values and performing DOM measurements.
 In most cases, you can attach a ref to the DOM node and avoid using `findDOMNode()` at all. When render returns null or false, `findDOMNode()` returns null.
+If Component has rendered fragment it returns the first element.
 
 ### Inferno Flags (package: inferno-vnode-flags)
 

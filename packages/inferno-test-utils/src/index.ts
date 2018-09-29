@@ -1,4 +1,4 @@
-import { VNode } from 'inferno';
+import { VNode, render } from 'inferno';
 import { isArray, isFunction, isInvalid, isNullOrUndef, isObject, isString, throwError } from 'inferno-shared';
 import {
   getTagNameOfVNode as _getTagNameOfVNode,
@@ -10,6 +10,7 @@ import {
   isVNode as _isVNode,
   Wrapper as _Wrapper
 } from './utils';
+import { VNodeFlags } from 'inferno-vnode-flags';
 import { renderToSnapshot as _renderToSnapshot, vNodeToSnapshot as _vNodeToSnapshot } from './jest';
 
 // Type Checkers
@@ -44,12 +45,12 @@ export function isDOMElementOfType(instance: any, type: string): boolean {
 
 export function isRenderedClassComponent(instance: any): boolean {
   return (
-    Boolean(instance) && isObject(instance) && _isVNode((instance as any).$V) && isFunction((instance as any).render) && isFunction((instance as any).setState)
+    Boolean(instance) && isObject(instance) && _isVNode((instance as any).$LI) && isFunction((instance as any).render) && isFunction((instance as any).setState)
   );
 }
 
 export function isRenderedClassComponentOfType(instance: any, type: Function): boolean {
-  return isRenderedClassComponent(instance) && isFunction(type) && instance.$V.type === type;
+  return isRenderedClassComponent(instance) && isFunction(type) && instance.constructor === type;
 }
 
 // Recursive Finder Functions
@@ -156,6 +157,20 @@ export function findRenderedVNodeWithType(renderedTree: any, type: string | Func
 
 export function findVNodeWithType(vNodeTree: VNode, type: string | Function): VNode {
   return findOneOf(vNodeTree, type, 'VNode', scryVNodesWithType);
+}
+
+export function renderIntoContainer(input) {
+  const container: any = document.createElement('div');
+
+  render(input, container);
+
+  const rootInput = container.$V;
+
+  if (rootInput && rootInput.flags & VNodeFlags.Component) {
+    return rootInput.children;
+  }
+
+  return rootInput;
 }
 
 export const vNodeToSnapshot = _vNodeToSnapshot;

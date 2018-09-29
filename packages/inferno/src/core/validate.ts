@@ -1,5 +1,6 @@
 import { isArray, isInvalid, isNullOrUndef, isStringOrNumber, throwError } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
+import { getComponentName } from '../DOM/utils/common';
 
 function getTagName(input) {
   let tagName;
@@ -22,19 +23,14 @@ function getTagName(input) {
     } else if (flags & VNodeFlags.Portal) {
       tagName = `Portal*`;
     } else {
-      const type = input.type;
-
-      // Fallback for IE
-      const componentName = type.name || type.displayName || type.constructor.name || (type.toString().match(/^function\s*([^\s(]+)/) || [])[1];
-
-      tagName = `<${componentName} />`;
+      tagName = `<${getComponentName(input.type)} />`;
     }
   }
 
   return '>> ' + tagName + '\n';
 }
 
-function DEV_ValidateKeys(vNodeTree, forceKeyed) {
+function DEV_ValidateKeys(vNodeTree, forceKeyed: boolean) {
   const foundKeys: any = {};
 
   for (let i = 0, len = vNodeTree.length; i < len; i++) {
@@ -53,6 +49,9 @@ function DEV_ValidateKeys(vNodeTree, forceKeyed) {
       continue;
     }
     if (typeof childNode === 'object') {
+      if (childNode.isValidated) {
+        continue;
+      }
       childNode.isValidated = true;
     }
 
@@ -68,9 +67,9 @@ function DEV_ValidateKeys(vNodeTree, forceKeyed) {
     if (!isInvalid(children)) {
       let val;
       if (childFlags & ChildFlags.MultipleChildren) {
-        val = DEV_ValidateKeys(children, childNode.childFlags & ChildFlags.HasKeyedChildren);
+        val = DEV_ValidateKeys(children, (childFlags & ChildFlags.HasKeyedChildren) !== 0);
       } else if (childFlags === ChildFlags.HasVNodeChildren) {
-        val = DEV_ValidateKeys([children], childNode.childFlags & ChildFlags.HasKeyedChildren);
+        val = DEV_ValidateKeys([children], false);
       }
       if (val) {
         val += getTagName(childNode);
@@ -98,7 +97,9 @@ function DEV_ValidateKeys(vNodeTree, forceKeyed) {
 
 export function validateVNodeElementChildren(vNode) {
   if (process.env.NODE_ENV !== 'production') {
-    if (vNode.childFlags & ChildFlags.HasInvalidChildren) {
+    // TODO: Validate portal children, vNode, Fragment, no arrays
+
+    if (vNode.childFlags === ChildFlags.HasInvalidChildren) {
       return;
     }
     if (vNode.flags & VNodeFlags.InputElement) {
@@ -108,15 +109,31 @@ export function validateVNodeElementChildren(vNode) {
       throwError("textarea elements can't have children.");
     }
     if (vNode.flags & VNodeFlags.Element) {
-      const voidTypes = ['area', 'base', 'br', 'col', 'command', 'embed', 'hr', 'img', 'input', 'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+      const voidTypes = {
+        area: true,
+        base: true,
+        br: true,
+        col: true,
+        command: true,
+        embed: true,
+        hr: true,
+        img: true,
+        input: true,
+        keygen: true,
+        link: true,
+        meta: true,
+        param: true,
+        source: true,
+        track: true,
+        wbr: true
+      };
       const tag = vNode.type.toLowerCase();
 
       if (tag === 'media') {
         throwError("media elements can't have children.");
       }
-      const idx = voidTypes.indexOf(tag);
-      if (idx !== -1) {
-        throwError(`${voidTypes[idx]} elements can't have children.`);
+      if (voidTypes[tag]) {
+        throwError(`${tag} elements can't have children.`);
       }
     }
   }

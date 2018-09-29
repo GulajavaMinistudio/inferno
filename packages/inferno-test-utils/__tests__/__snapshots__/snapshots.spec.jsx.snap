@@ -40,6 +40,41 @@ exports[`Snapshots JSX Should render deeper component 1`] = `
 </div>
 `;
 
+exports[`Snapshots JSX Should render fragment 1`] = `
+<div>
+  Array [
+    <div
+      id="a1"
+    >
+      A1
+    </div>,
+    <div>
+      A2
+    </div>,
+  ]
+  Array [
+    <div
+      id="b1"
+    >
+      B1
+    </div>,
+  ]
+  Array [
+    <div
+      id="c1"
+    >
+      C1
+    </div>,
+    <div>
+      C2
+    </div>,
+    <div>
+      C3
+    </div>,
+  ]
+</div>
+`;
+
 exports[`Snapshots JSX Should render html element 1`] = `
 <a
   aria-colspan="3"

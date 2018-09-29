@@ -1,7 +1,4 @@
-import { isDOMinsideVNode, isDOMinsideComponent,  } from "./isDOMinsideVDOM";
+import { isDOMinsideVNode, isDOMinsideComponent } from './isDOMinsideVDOM';
+import { findDOMNode } from './findDOMNode';
 
-
-export {
-  isDOMinsideVNode,
-  isDOMinsideComponent
-};
+export { findDOMNode, isDOMinsideVNode, isDOMinsideComponent };

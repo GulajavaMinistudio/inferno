@@ -271,7 +271,7 @@ describe('Components (JSX)', () => {
   }
 
   it('should render a basic component with styling', () => {
-    render(<BasicComponent3 title="styled!" styles={{ color: 'red', paddingLeft: '10px' }} />, container);
+    render(<BasicComponent3 title="styled!" styles={{ color: 'red', 'padding-left': '10px' }} />, container);
 
     expect(container.innerHTML).toBe(
       innerHTML('<div style="color: red; padding-left: 10px;"><span style="color: red; padding-left: 10px;">The title is styled!</span></div>')
@@ -279,7 +279,7 @@ describe('Components (JSX)', () => {
 
     render(<BasicComponent3 />, container);
 
-    render(<BasicComponent3 title="styled (again)!" styles={{ color: 'blue', marginBottom: '20px' }} />, container);
+    render(<BasicComponent3 title="styled (again)!" styles={{ color: 'blue', 'margin-bottom': '20px' }} />, container);
 
     expect(container.innerHTML).toBe(
       innerHTML('<div style="color: blue; margin-bottom: 20px;"><span style="color: blue; margin-bottom: 20px;">The title is styled (again)!</span></div>')
@@ -287,7 +287,7 @@ describe('Components (JSX)', () => {
   });
 
   it('should render a basic component and remove styling', () => {
-    render(<BasicComponent3 title="styled!" styles={{ color: 'red', paddingTop: '20px' }} />, container);
+    render(<BasicComponent3 title="styled!" styles={{ color: 'red', 'padding-top': '20px' }} />, container);
 
     expect(container.innerHTML).toBe(
       innerHTML('<div style="color: red; padding-top: 20px;"><span style="color: red; padding-top: 20px;">The title is styled!</span></div>')
@@ -1350,7 +1350,7 @@ describe('Components (JSX)', () => {
     class Label extends Component {
       render() {
         const style = {
-          backgroundColor: 'red',
+          'background-color': 'red',
           padding: '0 20px',
           fontSize: '40px'
         };
@@ -1407,7 +1407,7 @@ describe('Components (JSX)', () => {
     class Label extends Component {
       render() {
         const style = {
-          backgroundColor: 'red',
+          'background-color': 'red',
           padding: '0 20px',
           fontSize: '40px'
         };
@@ -2232,56 +2232,6 @@ describe('Components (JSX)', () => {
       expect(container.innerHTML).toEqual('<div>rendered</div>');
       render(<Comp1 foo={true} />, container);
       expect(container.innerHTML).toEqual('');
-    });
-
-    it('Should throw when array returned - statefull', () => {
-      class Comp1 extends Component {
-        constructor(props) {
-          super(props);
-        }
-
-        render() {
-          if (this.props.foo) {
-            return [<div>rendered1</div>, <div>rendered2</div>];
-          }
-
-          return <div>rendered</div>;
-        }
-      }
-
-      render(<Comp1 />, container);
-      expect(container.innerHTML).toEqual('<div>rendered</div>');
-      try {
-        render(<Comp1 foo={true} />, container);
-      } catch (e) {
-        expect(e.message).toEqual(
-          'Inferno Error: a valid Inferno VNode (or null) must be returned from a component render. You may have returned an array or an invalid object.'
-        );
-      }
-
-      expect(container.innerHTML).toEqual('<div>rendered</div>');
-    });
-
-    it('Should throw when array returned - stateless', () => {
-      const Comp1 = ({ foo }) => {
-        if (foo) {
-          return [<div>rendered1</div>, <div>rendered2</div>];
-        }
-
-        return <div>rendered</div>;
-      };
-
-      render(<Comp1 />, container);
-      expect(container.innerHTML).toEqual('<div>rendered</div>');
-      try {
-        render(<Comp1 foo={true} />, container);
-      } catch (e) {
-        expect(e.message).toEqual(
-          'Inferno Error: a valid Inferno VNode (or null) must be returned from a component render. You may have returned an array or an invalid object.'
-        );
-      }
-
-      expect(container.innerHTML).toEqual('<div>rendered</div>');
     });
   });
 

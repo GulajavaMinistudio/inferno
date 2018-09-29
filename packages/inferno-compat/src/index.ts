@@ -6,28 +6,28 @@ import {
   createTextVNode,
   createVNode,
   directClone,
-  hydrate,
   EMPTY_OBJ,
   getFlagsForElementVnode,
-  InfernoChildren,
-  InfernoInput,
-  getNumberStyleValue,
+  InfernoNode,
   linkEvent,
   normalizeProps,
   options,
   Props,
   Refs,
-  render,
-  VNode
+  __render,
+  VNode,
+  findDOMfromVNode
 } from 'inferno';
+import { hydrate } from 'inferno-hydrate';
 import { cloneVNode } from 'inferno-clone-vnode';
 import { ClassicComponentClass, ComponentSpec, createClass } from 'inferno-create-class';
 import { createElement } from 'inferno-create-element';
-import { isArray, isBrowser, isFunction, isInvalid, isNull, isNullOrUndef, isString, NO_OP } from 'inferno-shared';
+import { isArray, isBrowser, isFunction, isInvalid, isNull, isNullOrUndef, isString, warning } from 'inferno-shared';
 import { VNodeFlags } from 'inferno-vnode-flags';
 import { isValidElement } from './isValidElement';
 import PropTypes from './PropTypes';
 import { SVGDOMPropertyConfig } from './SVGDOMPropertyConfig';
+import { findDOMNode } from 'inferno-extras';
 
 declare global {
   interface Event {
@@ -36,24 +36,11 @@ declare global {
 }
 
 function unmountComponentAtNode(container: Element | SVGAElement | DocumentFragment): boolean {
-  render(null, container);
+  __render(null, container);
   return true;
 }
 
-function extend(base) {
-  for (let i = 1, obj; i < arguments.length; i++) {
-    if ((obj = arguments[i])) {
-      for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          base[key] = obj[key];
-        }
-      }
-    }
-  }
-  return base;
-}
-
-export type IterateChildrenFn = (value: InfernoChildren | any, index: number, array: Array<InfernoChildren | any>) => any;
+export type IterateChildrenFn = (value: InfernoNode | any, index: number, array: Array<InfernoNode | any>) => any;
 
 function flatten(arr, result) {
   for (let i = 0, len = arr.length; i < len; i++) {
@@ -70,7 +57,7 @@ function flatten(arr, result) {
 const ARR = [];
 
 const Children = {
-  map(children: Array<InfernoChildren | any>, fn: IterateChildrenFn, ctx: any): any[] {
+  map(children: Array<InfernoNode | any>, fn: IterateChildrenFn, ctx: any): any[] {
     if (isNullOrUndef(children)) {
       return children;
     }
@@ -80,7 +67,7 @@ const Children = {
     }
     return children.map(fn);
   },
-  forEach(children: Array<InfernoChildren | any>, fn: IterateChildrenFn, ctx?: any): void {
+  forEach(children: Array<InfernoNode | any>, fn: IterateChildrenFn, ctx?: any): void {
     if (isNullOrUndef(children)) {
       return;
     }
@@ -94,18 +81,18 @@ const Children = {
       fn(child, i, children);
     }
   },
-  count(children: Array<InfernoChildren | any>): number {
+  count(children: Array<InfernoNode | any>): number {
     children = Children.toArray(children);
     return children.length;
   },
-  only(children: Array<InfernoChildren | any>): InfernoChildren | any {
+  only(children: Array<InfernoNode | any>): InfernoNode | any {
     children = Children.toArray(children);
     if (children.length !== 1) {
       throw new Error('Children.only() expects only one child.');
     }
     return children[0];
   },
-  toArray(children: Array<InfernoChildren | any>): Array<InfernoChildren | any> {
+  toArray(children: Array<InfernoNode | any>): Array<InfernoNode | any> {
     if (isNullOrUndef(children)) {
       return [];
     }
@@ -123,15 +110,6 @@ const Children = {
 };
 
 (Component.prototype as any).isReactComponent = {};
-
-let currentComponent: any = null;
-
-options.beforeRender = function(component): void {
-  currentComponent = component;
-};
-options.afterRender = function(): void {
-  currentComponent = null;
-};
 
 const version = '15.4.2';
 
@@ -160,11 +138,19 @@ function normalizeFormProps<P>(name: string, props: Props<P> | any) {
 
     if (!type || type === 'text') {
       eventName = 'oninput';
-    } else if (type === 'file') {
-      eventName = 'onchange';
     }
 
     if (eventName && !props[eventName]) {
+      if (process.env.NODE_ENV !== 'production') {
+        const existingMethod = props.oninput || props.onInput;
+
+        if (existingMethod) {
+          warning(
+            `Inferno-compat Warning! 'onInput' handler is reserved to support React like 'onChange' event flow.
+Original event handler 'function ${existingMethod.name}' will not be called.`
+          );
+        }
+      }
       props[eventName] = props.onChange;
       props.onChange = void 0;
     }
@@ -214,7 +200,6 @@ const oldCreateVNode = options.createVNode;
 
 options.createVNode = (vNode: VNode) => {
   const children = vNode.children as any;
-  const ref = vNode.ref;
   let props: any = vNode.props;
 
   if (isNullOrUndef(props)) {
@@ -222,19 +207,8 @@ options.createVNode = (vNode: VNode) => {
   }
 
   // React supports iterable children, in addition to Array-like
-  if (hasSymbolSupport && !isNull(children) && !isArray(children) && typeof children === 'object' && isFunction(children[symbolIterator])) {
+  if (hasSymbolSupport && !isNull(children) && typeof children === 'object' && !isArray(children) && isFunction(children[symbolIterator])) {
     vNode.children = iterableToArray(children[symbolIterator]());
-  }
-  if (typeof ref === 'string' && !isNull(currentComponent)) {
-    if (!currentComponent.refs) {
-      currentComponent.refs = {};
-    }
-    vNode.ref = function(val) {
-      (this as any).refs[ref] = val;
-    }.bind(currentComponent);
-  }
-  if (vNode.className) {
-    props.className = vNode.className;
   }
 
   if (!isNullOrUndef(children) && isNullOrUndef(props.children)) {
@@ -255,6 +229,9 @@ options.createVNode = (vNode: VNode) => {
     normalizeFormProps(vNode.type, props);
   }
   if (flags & VNodeFlags.Element) {
+    if (vNode.className) {
+      props.className = vNode.className;
+    }
     normalizeGenericProps(props);
   }
 
@@ -265,12 +242,15 @@ options.createVNode = (vNode: VNode) => {
 
 // Credit: preact-compat - https://github.com/developit/preact-compat :)
 function shallowDiffers(a, b): boolean {
-  for (const i in a) {
+  let i;
+
+  for (i in a) {
     if (!(i in b)) {
       return true;
     }
   }
-  for (const i in b) {
+
+  for (i in b) {
     if (a[i] !== b[i]) {
       return true;
     }
@@ -306,7 +286,7 @@ function unstable_renderSubtreeIntoContainer(parentComponent, vNode, container, 
     children: vNode,
     context: parentComponent.context
   });
-  render(wrapperVNode, container);
+  render(wrapperVNode, container, null);
   const component = vNode.children;
 
   if (callback) {
@@ -316,34 +296,18 @@ function unstable_renderSubtreeIntoContainer(parentComponent, vNode, container, 
   return component;
 }
 
-// Credit: preact-compat - https://github.com/developit/preact-compat
-const ELEMENTS = 'a abbr address area article aside audio b base bdi bdo big blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd keygen label legend li link main map mark menu menuitem meta meter nav noscript object ol optgroup option output p param picture pre progress q rp rt ruby s samp script section select small source span strong style sub summary sup table tbody td textarea tfoot th thead time title tr track u ul var video wbr circle clipPath defs ellipse g image line linearGradient mask path pattern polygon polyline radialGradient rect stop svg text tspan'.split(
-  ' '
-);
-
 function createFactory(type) {
   return createElement.bind(null, type);
 }
 
-const DOM = {};
-for (let i = ELEMENTS.length; i--; ) {
-  DOM[ELEMENTS[i]] = createFactory(ELEMENTS[i]);
-}
+function render(rootInput, container, cb?, context?) {
+  __render(rootInput, container, cb, context);
 
-function findDOMNode(ref) {
-  if (ref && ref.nodeType) {
-    return ref;
+  const input = container.$V;
+
+  if (input && input.flags & VNodeFlags.Component) {
+    return input.children;
   }
-
-  if (!ref || ref.$UN) {
-    return null;
-  }
-
-  if (ref.$LI) {
-    return ref.$LI.dom;
-  }
-
-  return null;
 }
 
 // Mask React global in browser enviornments when React is not used.
@@ -351,12 +315,9 @@ if (isBrowser && typeof (window as any).React === 'undefined') {
   const exports = {
     Children,
     Component,
-    DOM,
     EMPTY_OBJ,
-    NO_OP,
     PropTypes,
     PureComponent,
-    __spread: extend,
     cloneElement: cloneVNode,
     cloneVNode,
     createClass,
@@ -370,7 +331,6 @@ if (isBrowser && typeof (window as any).React === 'undefined') {
     directClone,
     findDOMNode,
     getFlagsForElementVnode,
-    getNumberStyleValue,
     hydrate,
     isValidElement,
     linkEvent,
@@ -391,11 +351,8 @@ export {
   ClassicComponentClass,
   Component,
   ComponentSpec,
-  DOM,
   EMPTY_OBJ,
-  InfernoChildren,
-  InfernoInput,
-  NO_OP,
+  InfernoNode,
   Props,
   PropTypes,
   PureComponent,
@@ -412,10 +369,8 @@ export {
   createTextVNode,
   createVNode,
   directClone,
-  extend as __spread,
   findDOMNode,
   getFlagsForElementVnode,
-  getNumberStyleValue,
   hydrate,
   isValidElement,
   linkEvent,
@@ -430,12 +385,9 @@ export {
 export default {
   Children,
   Component,
-  DOM,
   EMPTY_OBJ,
-  NO_OP,
   PropTypes,
   PureComponent,
-  __spread: extend,
   cloneElement: cloneVNode,
   cloneVNode,
   createClass,
@@ -448,8 +400,8 @@ export default {
   createVNode,
   directClone,
   findDOMNode,
+  findDOMfromVNode,
   getFlagsForElementVnode,
-  getNumberStyleValue,
   hydrate,
   isValidElement,
   linkEvent,

@@ -1,11 +1,11 @@
 import { namespaces } from './constants';
-import { isFunction, isNull, isNullOrUndef, isNumber, isString, throwError } from 'inferno-shared';
+import { isFunction, isNull, isNullOrUndef, isString, throwError } from 'inferno-shared';
 import { handleEvent } from './events/delegation';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { isSameInnerHTML } from './utils/innerhtml';
 import { addFormElementEventHandlers, isControlledFormElement, processElement } from './wrappers/processElement';
 import { unmount, unmountAllChildren } from './unmounting';
-import { VNode } from 'inferno';
+import { VNode } from '../core/types';
 
 function createLinkEvent(linkEvent, nextValue) {
   return function(e) {
@@ -36,55 +36,16 @@ export function patchEvent(name: string, nextValue, dom) {
   }
 }
 
-export function getNumberStyleValue(style: string, value: number) {
-  switch (style) {
-    case 'animationIterationCount':
-    case 'borderImageOutset':
-    case 'borderImageSlice':
-    case 'borderImageWidth':
-    case 'boxFlex':
-    case 'boxFlexGroup':
-    case 'boxOrdinalGroup':
-    case 'columnCount':
-    case 'fillOpacity':
-    case 'flex':
-    case 'flexGrow':
-    case 'flexNegative':
-    case 'flexOrder':
-    case 'flexPositive':
-    case 'flexShrink':
-    case 'floodOpacity':
-    case 'fontWeight':
-    case 'gridColumn':
-    case 'gridRow':
-    case 'lineClamp':
-    case 'lineHeight':
-    case 'opacity':
-    case 'order':
-    case 'orphans':
-    case 'stopOpacity':
-    case 'strokeDasharray':
-    case 'strokeDashoffset':
-    case 'strokeMiterlimit':
-    case 'strokeOpacity':
-    case 'strokeWidth':
-    case 'tabSize':
-    case 'widows':
-    case 'zIndex':
-    case 'zoom':
-      return value;
-    default:
-      return value + 'px';
-  }
-}
-
 // We are assuming here that we come from patchProp routine
 // -nextAttrValue cannot be null or undefined
 function patchStyle(lastAttrValue, nextAttrValue, dom) {
+  if (isNullOrUndef(nextAttrValue)) {
+    dom.removeAttribute('style');
+    return;
+  }
   const domStyle = dom.style;
   let style;
   let value;
-
   if (isString(nextAttrValue)) {
     domStyle.cssText = nextAttrValue;
     return;
@@ -95,19 +56,19 @@ function patchStyle(lastAttrValue, nextAttrValue, dom) {
       // do not add a hasOwnProperty check here, it affects performance
       value = nextAttrValue[style];
       if (value !== lastAttrValue[style]) {
-        domStyle[style] = isNumber(value) ? getNumberStyleValue(style, value) : value;
+        domStyle.setProperty(style, value);
       }
     }
 
     for (style in lastAttrValue) {
       if (isNullOrUndef(nextAttrValue[style])) {
-        domStyle[style] = '';
+        domStyle.removeProperty(style);
       }
     }
   } else {
     for (style in nextAttrValue) {
       value = nextAttrValue[style];
-      domStyle[style] = isNumber(value) ? getNumberStyleValue(style, value) : value;
+      domStyle.setProperty(style, value);
     }
   }
 }
@@ -173,6 +134,9 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
         dom[prop] = value;
       }
       break;
+    case 'style':
+      patchStyle(lastValue, nextValue, dom);
+      break;
     case 'dangerouslySetInnerHTML':
       const lastHtml = (lastValue && lastValue.__html) || '';
       const nextHtml = (nextValue && nextValue.__html) || '';
@@ -192,12 +156,10 @@ export function patchProp(prop, lastValue, nextValue, dom: Element, isSVG: boole
       }
       break;
     default:
-      if (prop[0] === 'o' && prop[1] === 'n') {
+      if (prop.charCodeAt(0) === 111 && prop.charCodeAt(1) === 110) {
         patchEvent(prop, nextValue, dom);
       } else if (isNullOrUndef(nextValue)) {
         dom.removeAttribute(prop);
-      } else if (prop === 'style') {
-        patchStyle(lastValue, nextValue, dom);
       } else if (isSVG && namespaces[prop]) {
         // We optimize for isSVG being false
         // If we end up in this path we can read property again

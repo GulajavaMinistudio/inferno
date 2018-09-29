@@ -41,7 +41,7 @@ describe('Components (non-JSX)', () => {
       }
     }
 
-    it('should render a basic component', () => {
+    it('should recover from a basic error', () => {
       const template = (Component, title) =>
         createElement(
           'div',
@@ -62,6 +62,7 @@ describe('Components (non-JSX)', () => {
 
       render(template(BasicComponent1, 'abc'), container);
 
+      expect(container.textContent).toBe('The title is abc');
       expect(container.firstChild.firstChild.getAttribute('class')).toBe('basic');
       expect(container.firstChild.firstChild.firstChild.getAttribute('class')).toBe('basic-render');
       expect(container.firstChild.firstChild.tagName).toBe('DIV');
@@ -76,8 +77,11 @@ describe('Components (non-JSX)', () => {
 
       render(template(BasicComponent1, []), container);
 
+      expect(container.textContent).toBe('The title is ');
+
       render(template(BasicComponent1, 'abcdef'), container);
 
+      expect(container.textContent).toBe('The title is abcdef');
       expect(container.firstChild.firstChild.getAttribute('class')).toBe('basic');
       expect(container.firstChild.firstChild.firstChild.getAttribute('class')).toBe('basic-render');
       expect(container.firstChild.firstChild.tagName).toBe('DIV');
@@ -86,6 +90,7 @@ describe('Components (non-JSX)', () => {
 
       render(template(BasicComponent1, null), container);
 
+      expect(container.textContent).toBe('The title is ');
       expect(container.firstChild.firstChild.getAttribute('class')).toBe('basic');
       expect(container.firstChild.firstChild.firstChild.getAttribute('class')).toBe('basic-render');
       expect(container.firstChild.firstChild.tagName).toBe('DIV');
@@ -94,6 +99,7 @@ describe('Components (non-JSX)', () => {
 
       render(template(BasicComponent1, undefined), container);
 
+      expect(container.textContent).toBe('The title is ');
       expect(container.firstChild.firstChild.getAttribute('class')).toBe('basic');
       expect(container.firstChild.firstChild.firstChild.getAttribute('class')).toBe('basic-render');
       expect(container.firstChild.firstChild.tagName).toBe('DIV');
@@ -102,6 +108,7 @@ describe('Components (non-JSX)', () => {
 
       render(template(BasicComponent1, '1234'), container);
 
+      expect(container.textContent).toBe('The title is 1234');
       expect(container.firstChild.firstChild.getAttribute('class')).toBe('basic');
       expect(container.firstChild.firstChild.firstChild.getAttribute('class')).toBe('basic-render');
       expect(container.firstChild.firstChild.tagName).toBe('DIV');
@@ -390,7 +397,7 @@ describe('Components (non-JSX)', () => {
             title: 'styled!',
             styles: {
               color: 'red',
-              paddingLeft: '10px'
+              'padding-left': '10px'
             }
           }),
           container
@@ -404,7 +411,7 @@ describe('Components (non-JSX)', () => {
             title: 'styled!',
             styles: {
               color: 'red',
-              paddingLeft: '10px'
+              'padding-left': '10px'
             }
           }),
           container
@@ -419,7 +426,7 @@ describe('Components (non-JSX)', () => {
             title: 'styled (again)!',
             styles: {
               color: 'blue',
-              paddingRight: '20px'
+              'padding-right': '20px'
             }
           }),
           container

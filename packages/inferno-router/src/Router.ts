@@ -1,11 +1,11 @@
-import { Component, VNode } from 'inferno';
-import { Children, invariant, warning } from './utils';
+import { Component, InfernoNode } from 'inferno';
+import { warning } from './utils';
 import * as H from 'history';
 import { combineFrom } from 'inferno-shared';
 
 export interface IRouterProps {
   history: H.History;
-  children: undefined | VNode | null;
+  children: InfernoNode;
 }
 
 /**
@@ -45,9 +45,7 @@ export class Router extends Component<IRouterProps, any> {
   }
 
   public componentWillMount() {
-    const { children, history } = this.props;
-
-    invariant(children == null || Children.count(children) === 1, 'A <Router> may have only one child element');
+    const { history } = this.props;
 
     // Do this here so we can setState when a <Redirect> changes the
     // location in componentWillMount. This happens e.g. when doing

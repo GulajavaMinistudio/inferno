@@ -1,11 +1,9 @@
-import { Component, ComponentType, createComponentVNode, InfernoChildren, VNode } from 'inferno';
+import { Component, createComponentVNode, IComponentConstructor, InfernoNode, SFC } from 'inferno';
 import { VNodeFlags } from 'inferno-vnode-flags';
-import { Children, invariant, warning } from './utils';
+import { invariant, warning } from './utils';
 import { matchPath } from './matchPath';
 import * as H from 'history';
-import { combineFrom } from 'inferno-shared';
-
-const isEmptyChildren = children => Children.count(children) === 0;
+import { isFunction, combineFrom } from 'inferno-shared';
 
 export interface Match<P> {
   params: P;
@@ -27,10 +25,10 @@ export interface IRouteProps {
   exact?: boolean;
   strict?: boolean;
   sensitive?: boolean;
-  component?: ComponentType<RouteComponentProps<any>> | ComponentType<any>;
-  render?: ((props: RouteComponentProps<any>, context: any) => VNode);
+  component?: IComponentConstructor<any> | SFC;
+  render?: ((props: RouteComponentProps<any>, context: any) => InfernoNode);
   location?: H.Location;
-  children?: ((props: RouteComponentProps<any>) => VNode) | InfernoChildren;
+  children?: ((props: RouteComponentProps<any>) => InfernoNode) | InfernoNode;
 }
 
 /**
@@ -63,7 +61,9 @@ class Route extends Component<IRouteProps, any> {
       return computedMatch;
     }
 
-    invariant(router, 'You should not use <Route> or withRouter() outside a <Router>');
+    if (process.env.NODE_ENV !== 'production') {
+      invariant(router, 'You should not use <Route> or withRouter() outside a <Router>');
+    }
 
     const { route } = router;
     const pathname = (location || route.location).pathname;
@@ -89,7 +89,7 @@ class Route extends Component<IRouteProps, any> {
     });
   }
 
-  public render(): VNode | null {
+  public render() {
     const { match } = this.state;
     const { children, component, render } = this.props;
     const { history, route, staticContext } = this.context.router;
@@ -97,6 +97,11 @@ class Route extends Component<IRouteProps, any> {
     const props = { match, location, history, staticContext };
 
     if (component) {
+      if (process.env.NODE_ENV !== 'production') {
+        if (!isFunction(component)) {
+          throw new Error("Inferno error: <Route /> - 'component' property must be prototype of class or functional component, not vNode.");
+        }
+      }
       return match ? createComponentVNode(VNodeFlags.ComponentUnknown, component, props) : null;
     }
 
@@ -108,11 +113,7 @@ class Route extends Component<IRouteProps, any> {
       return (children as Function)(props);
     }
 
-    if (children && !isEmptyChildren(children)) {
-      return Children.only(children);
-    }
-
-    return null;
+    return children;
   }
 }
 
@@ -124,12 +125,12 @@ if (process.env.NODE_ENV !== 'production') {
     );
 
     warning(
-      !(this.props.component && this.props.children && !isEmptyChildren(this.props.children)),
+      !(this.props.component && this.props.children),
       'You should not use <Route component> and <Route children> in the same route; <Route children> will be ignored'
     );
 
     warning(
-      !(this.props.render && this.props.children && !isEmptyChildren(this.props.children)),
+      !(this.props.render && this.props.children),
       'You should not use <Route render> and <Route children> in the same route; <Route children> will be ignored'
     );
   };

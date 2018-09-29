@@ -26,7 +26,6 @@ run after `npm install`. `lerna` executes command based on a topological-sorted 
 For example, if you want to see the order of packages being processed, you can do:
 ```
 $ lerna exec -- node -e "console.log(require('./package.json').name)"
-Lerna v2.0.0-beta.36
 inferno-shared
 inferno-vnode-flags
 inferno
@@ -96,8 +95,6 @@ Just run `npm run test:browser:debug` Open localhost:9876 and click debug!
 Debugging NodeJS
 ----------------
 Its possible to debug inferno tests by running following command `npm run debug` and open chrome web address: chrome://inspect/#devices
-However: There is issue with ts-jest; It does additional post processing to compiled files this needs to be disabled to see source files.
-Edit following file: `/node_modules/typescript-babel-jest/node_modules/babel-jest/build/index.js` and change hardcoded babel option `retainLines` property to false.
 
 Pro tip: You can filter down number of tests by editing `debug` -task:
 `node --inspect-brk ./node_modules/.bin/jest {*edit this*} --runInBand --no-cache --no-watchman`

@@ -285,7 +285,7 @@ describe('cloneVNode (JSX)', () => {
       });
 
       render(newNode, container);
-      expect(newNode.props.className).toBe(undefined);
+      // expect(newNode.props.className).toBe(undefined); , This depends if we are running inferno-compat or not
       // expect(newNode.props.hasOwnProperty('className')).toBe(false);
 
       expect(container.firstChild.className).toBe('foo');
@@ -305,7 +305,7 @@ describe('cloneVNode (JSX)', () => {
 
       render(newNode, container);
       console.log(newNode.props);
-      expect(newNode.props.className).toBe(undefined);
+      // expect(newNode.props.className).toBe(undefined); , This depends if we are running inferno-compat or not
       // expect(newNode.props.hasOwnProperty('className')).toBe(false);
 
       expect(container.firstChild.className).toBe('');
@@ -326,12 +326,31 @@ describe('cloneVNode (JSX)', () => {
       render(newNode, container);
 
       expect(newNode.props.hasOwnProperty('id')).toBe(true);
-      expect(newNode.props.className).toBe(undefined);
+      // expect(newNode.props.className).toBe(undefined);
       // expect(newNode.props.hasOwnProperty('className')).toBe(false);
 
       expect(container.firstChild.className).toBe('test');
       expect(container.firstChild.getAttribute('id')).toBe('wow');
       expect(innerHTML(container.innerHTML)).toEqual(innerHTML('<div class="test" id="wow"></div>'));
+    });
+
+    it('Should be possible to add props to children', () => {
+      function Foobar(props) {
+        return <div>{cloneVNode(props.children, { foo: 'bar' })}</div>;
+      }
+
+      function ChildCom(props) {
+        return <div>{props.foo}</div>;
+      }
+
+      render(
+        <Foobar>
+          <ChildCom foo="init" />
+        </Foobar>,
+        container
+      );
+
+      expect(container.innerHTML).toEqual('<div><div>bar</div></div>');
     });
   });
 

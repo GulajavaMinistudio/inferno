@@ -19,22 +19,6 @@ export function innerHTML(HTML: string): string {
   return sortAttributes(comparer.innerHTML);
 }
 
-export function createStyler(CSS: string | undefined | null): string {
-  if (typeof CSS === 'undefined' || CSS === null) {
-    return '';
-  }
-  comparer.style.cssText = CSS;
-  return comparer.style.cssText;
-}
-
-export function style(CSS: string[] | string): string[] | string {
-  if (CSS instanceof Array) {
-    return CSS.map(createStyler);
-  } else {
-    return createStyler(CSS);
-  }
-}
-
 export function createContainerWithHTML(html: string): HTMLDivElement {
   const container = document.createElement('div');
 
@@ -49,13 +33,13 @@ export function validateNodeTree(node: any): boolean {
   if (isStringOrNumber(node)) {
     return true;
   }
-  if (!node.dom) {
-    return false;
-  }
   const children = node.children;
   const flags = node.flags;
 
   if ((flags & VNodeFlags.Element) > 0) {
+    if (!node.dom) {
+      return false;
+    }
     if (!isNullOrUndef(children)) {
       if (isArray(children)) {
         for (const child of children) {

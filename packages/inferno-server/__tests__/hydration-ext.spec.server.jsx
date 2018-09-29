@@ -1,6 +1,6 @@
-import { Component, render } from 'inferno';
+import { Component, render, createTextVNode } from 'inferno';
 import { createContainerWithHTML, innerHTML, validateNodeTree } from 'inferno-utils';
-import { createTextVNode } from '../../inferno/src';
+import { hydrate } from 'inferno-hydrate';
 
 class Comp extends Component {
   render() {
@@ -79,16 +79,16 @@ describe('SSR Hydration Extended - (JSX)', () => {
   ].forEach(({ html, component }, i) => {
     it(`do test #${i + 1}`, () => {
       const container = createContainerWithHTML(html);
-      render(component, container);
+      hydrate(component, container);
 
       expect(innerHTML(container.innerHTML)).toEqual(innerHTML(compHtml));
     });
   });
 
   it('Should hydrate correctly when CSR children is missing', () => {
-    const container = createContainerWithHTML('<div><!----> </div></div>');
+    const container = createContainerWithHTML('<div> </div></div>');
 
-    render(
+    hydrate(
       <InnerNested>
         <Nested>
           <Comp2 />
@@ -103,7 +103,7 @@ describe('SSR Hydration Extended - (JSX)', () => {
   it('Should hydrate correctly when CSR component returns null', () => {
     const container = createContainerWithHTML('<div></div>');
 
-    render(
+    hydrate(
       <div>
         <Nested>
           <InnerNested />
@@ -116,9 +116,9 @@ describe('SSR Hydration Extended - (JSX)', () => {
   });
 
   it('Should hydrate correctly when there are comment nodes', () => {
-    const container = createContainerWithHTML('<div><!----></div>');
+    const container = createContainerWithHTML('<div></div>');
 
-    render(
+    hydrate(
       <div>
         <Nested>
           <InnerNested />
@@ -131,9 +131,9 @@ describe('SSR Hydration Extended - (JSX)', () => {
   });
 
   it('Should hydrate correctly when there are comment nodes #2', () => {
-    const container = createContainerWithHTML('<div><!----><!----><!----></div>');
+    const container = createContainerWithHTML('<div></div>');
 
-    render(
+    hydrate(
       <div>
         <Nested>
           <InnerNested>
@@ -147,23 +147,21 @@ describe('SSR Hydration Extended - (JSX)', () => {
     expect(innerHTML(container.innerHTML)).toEqual(innerHTML('<div><p>Hello World!</p></div>'));
   });
 
-  it('Should handle empty textNodes correctly Github #1137', () => {
+  it('hasTextChildren - Should handle empty textNodes correctly Github #1137', () => {
     const container = createContainerWithHTML('<span class="error"></span>');
 
     const vNode = <span className="error">{''}</span>;
 
-    expect(vNode.children).toEqual(createTextVNode(''));
+    expect(vNode.children).toEqual('');
 
-    render(vNode, container); // This should create empty text node
-
-    expect(container.firstChild.firstChild).not.toBeNull();
+    hydrate(vNode, container); // This should create empty text node
 
     render(<span className="error">{'Okay!'}</span>, container);
 
     expect(container.textContent).toBe('Okay!');
   });
 
-  it('Should handle empty textNodes correctly Github #1137 variation#2', () => {
+  it('hasTextChildren - Should handle empty textNodes correctly Github #1137 variation#2', () => {
     const container = createContainerWithHTML('<div><span class="error"></span></div>');
 
     const vNode = (
@@ -172,9 +170,48 @@ describe('SSR Hydration Extended - (JSX)', () => {
       </div>
     );
 
+    expect(vNode.children.children).toEqual('');
+
+    hydrate(vNode, container); // This should create empty text node
+
+    render(
+      <div>
+        <span className="error">{'Okay!'}</span>
+      </div>,
+      container
+    );
+
+    expect(container.textContent).toBe('Okay!');
+  });
+
+  it('createTextVNode - Should handle empty textNodes correctly Github #1137', () => {
+    const container = createContainerWithHTML('<span class="error"></span>');
+
+    const vNode = <span className="error">{createTextVNode('')}</span>;
+
+    expect(vNode.children).toEqual(createTextVNode(''));
+
+    hydrate(vNode, container); // This should create empty text node
+
+    expect(container.firstChild.firstChild).not.toBeNull();
+
+    render(<span className="error">{'Okay!'}</span>, container);
+
+    expect(container.textContent).toBe('Okay!');
+  });
+
+  it('createTextVNode - Should handle empty textNodes correctly Github #1137 variation#2', () => {
+    const container = createContainerWithHTML('<div><span class="error"></span></div>');
+
+    const vNode = (
+      <div>
+        <span className="error">{createTextVNode('')}</span>
+      </div>
+    );
+
     expect(vNode.children.children).toEqual(createTextVNode(''));
 
-    render(vNode, container); // This should create empty text node
+    hydrate(vNode, container); // This should create empty text node
 
     expect(container.firstChild.firstChild.firstChild).not.toBeNull();
 

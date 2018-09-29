@@ -37,6 +37,8 @@ function buildVNodeSnapshot(vNode: VNode) {
     for (let i = 0, len = children.length; i < len; i++) {
       childVNode.push(buildVNodeSnapshot(children[i]));
     }
+  } else if (vNode.childFlags & ChildFlags.HasTextChildren) {
+    childVNode = vNode.children + '';
   }
 
   if (flags & VNodeFlags.Element) {
@@ -68,7 +70,7 @@ function buildVNodeSnapshot(vNode: VNode) {
     return createSnapshotObject({
       children: childVNode,
       props: snapShotProps,
-      type: getTagNameOfVNode(vNode),
+      type: getTagNameOfVNode(vNode)
     });
   } else if (flags & VNodeFlags.Text) {
     childVNode = vNode.children + '';

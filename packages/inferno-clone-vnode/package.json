@@ -1,11 +1,12 @@
 {
   "name": "inferno-clone-vnode",
-  "version": "5.6.1",
+  "version": "6.0.0-rc.0",
   "license": "MIT",
   "description": "provides helper function to clone Inferno's vNodes",
   "author": {
-    "name": "Sampo Kivistö",
-    "email": "sampo.kivisto@live.fi"
+    "name": "Sampo Kivistö<Havunen>",
+    "email": "sampo.kivisto@live.fi",
+    "url": "https://github.com/havunen"
   },
   "bugs": {
     "url": "https://github.com/infernojs/inferno/issues"
@@ -25,13 +26,13 @@
     "class",
     "vdom"
   ],
-  "peerDependencies": {
-    "inferno": "^5"
+  "dependencies": {
+    "inferno": "^6.0.0-rc.0"
   },
   "devDependencies": {
-    "inferno": "5.6.1",
-    "inferno-shared": "5.6.1",
-    "inferno-vnode-flags": "5.6.1"
+    "inferno": "5.5.0",
+    "inferno-shared": "^6.0.0-rc.0",
+    "inferno-vnode-flags": "^6.0.0-rc.0"
   },
   "rollup": {
     "bundledDependencies": [

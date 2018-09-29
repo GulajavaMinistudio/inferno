@@ -1,4 +1,4 @@
-import { render } from 'inferno';
+import { render, Component, Fragment, forwardRef, createRef } from 'inferno';
 import { createElement } from 'inferno-create-element';
 import { innerHTML } from 'inferno-utils';
 
@@ -134,10 +134,6 @@ describe('CreateElement (non-JSX)', () => {
     expect(container.innerHTML).toBe(innerHTML('<div>Hooks</div>'));
   });
 
-  it('Should throw with invalid name', () => {
-    expect(() => createElement({}, null)).toThrowError(Error);
-  });
-
   it('Should handle node with refs', done => {
     let myRef = 'myRef';
 
@@ -154,5 +150,50 @@ describe('CreateElement (non-JSX)', () => {
       });
     };
     render(createElement(app, null), container);
+  });
+
+  describe('Fragments', () => {
+    it('Should render Fragment with key', () => {
+      render(createElement(Fragment, { key: 'first' }, createElement('div', null, 'Ok'), createElement('span', null, 'Test')), container);
+
+      expect(container.innerHTML).toBe('<div>Ok</div><span>Test</span>');
+
+      const div = container.querySelector('div');
+      const span = container.querySelector('span');
+
+      render(createElement(Fragment, { key: 'foobar' }, createElement('div', null, 'Ok'), createElement('span', null, 'Test')), container);
+
+      // Verify key works
+      expect(container.innerHTML).toBe('<div>Ok</div><span>Test</span>');
+
+      expect(div).not.toBe(container.querySelector('div'));
+      expect(span).not.toBe(container.querySelector('span'));
+    });
+  });
+
+  it('Should be possible to forward createRef', () => {
+    const FancyButton = forwardRef((props, ref) => createElement('button', { ref: ref, className: 'FancyButton' }, props.children));
+
+    expect(FancyButton.render).toBeDefined();
+
+    class Hello extends Component {
+      constructor(props) {
+        super(props);
+
+        // You can now get a ref directly to the DOM button:
+        this.btn = createRef();
+      }
+
+      componentDidMount() {
+        expect(this.btn.current).toBe(container.querySelector('button'));
+      }
+      render() {
+        return createElement(FancyButton, { ref: this.btn }, 'Click me!');
+      }
+    }
+
+    render(createElement(Hello), container);
+
+    expect(container.innerHTML).toBe('<button class="FancyButton">Click me!</button>');
   });
 });
