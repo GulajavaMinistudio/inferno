@@ -133,14 +133,14 @@ describe('CSS style properties (JSX)', () => {
     // expect(container.innerHTML).to.eql('<div></div>');
   });
 
-  it('Should remove style attribute when single prop value is null', () => {
+  it('Should remove style attribute when single prop value is undefined', () => {
     const stylesOne = { 'text-align': 'center', color: 'red', display: 'block' };
     render(styleNode(stylesOne), container);
     expect(container.firstChild.style.textAlign).toBe('center');
 
-    const stylesTwo = { 'text-align': 'start', display: 'none' };
+    const stylesTwo = { 'text-align': 'left', display: 'none' };
     render(styleNode(stylesTwo), container);
-    expect(container.firstChild.style.textAlign).toBe('start');
+    expect(container.firstChild.style.textAlign).toBe('left');
     expect(container.firstChild.style.display).toBe('none');
     expect(container.firstChild.style.color).toBe('');
   });

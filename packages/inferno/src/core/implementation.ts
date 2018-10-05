@@ -1,7 +1,7 @@
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { combineFrom, isArray, isFunction, isInvalid, isNull, isNullOrUndef, isString, isStringOrNumber, isUndefined, throwError } from 'inferno-shared';
 import { validateVNodeElementChildren } from './validate';
-import { Fragment } from './../DOM/utils/common';
+import { Fragment, options } from './../DOM/utils/common';
 import { ForwardRef, IComponent, InfernoNode, Props, Ref, Refs, VNode } from './types';
 
 const keyPrefix = '$';
@@ -50,7 +50,7 @@ export function createVNode<P>(
       throwError('Creating Component vNodes using createVNode is not allowed. Use Inferno.createComponentVNode method.');
     }
   }
-  const childFlag = childFlags === void 0 ? ChildFlags.HasInvalidChildren : childFlags;
+  const childFlag: ChildFlags = childFlags === void 0 ? ChildFlags.HasInvalidChildren : childFlags as ChildFlags;
   const vNode = getVNode(childFlag, children, className, flags, key, props, ref, type);
 
   const optsVNode = options.createVNode;
@@ -298,7 +298,7 @@ export function getFlagsForElementVnode(type: string): VNodeFlags {
 
 export function normalizeChildren(vNode: VNode, children) {
   let newChildren: any;
-  let newChildFlags: number = ChildFlags.HasInvalidChildren;
+  let newChildFlags: ChildFlags = ChildFlags.HasInvalidChildren;
 
   // Don't change children to match strict equal (===) true in patching
   if (isInvalid(children)) {
@@ -374,13 +374,3 @@ export function normalizeChildren(vNode: VNode, children) {
 
   return vNode;
 }
-
-export const options: {
-  componentComparator: null | Function;
-  createVNode: null | Function;
-  renderComplete: null | Function;
-} = {
-  componentComparator: null,
-  createVNode: null,
-  renderComplete: null
-};
