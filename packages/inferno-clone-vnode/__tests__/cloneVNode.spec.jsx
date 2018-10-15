@@ -480,4 +480,154 @@ describe('cloneVNode (JSX)', () => {
       expect(innerHTML(container.innerHTML)).toEqual(innerHTML('<div></div>'));
     });
   });
+
+  describe('without children specified', () => {
+    it('should render children one level deep', () => {
+      class NameContainer extends Component {
+        render() {
+          const children = this.props.children.map(c =>
+            cloneVNode(c, {
+              name: 'Henry'
+            })
+          );
+
+          return <span>{children}</span>;
+        }
+      }
+
+      const NameViewer = () => {
+        return (
+          <NameContainer>
+            <div className="test">
+              <span>A child that should render after the clone</span>
+            </div>
+            <div>
+              <span>A child that should render after the clone</span>
+            </div>
+          </NameContainer>
+        );
+      };
+
+      render(<NameViewer />, container);
+
+      expect(container.innerHTML).toBe(`<span><div class="test" name="Henry"><span>A child that should render after \
+the clone</span></div><div name="Henry"><span>A child that should render after the clone</span></div></span>`);
+    });
+
+    it('should render children two levels deep', () => {
+      const items = [{ name: 'Mike Brady' }, { name: 'Carol Brady' }, { name: 'Greg Brady' }, { name: 'Marcia Brady' }];
+      const items2 = [{ age: 28 }, { age: 26 }, { age: 16 }, { age: 15 }];
+
+      class Wrapper1 extends Component {
+        render() {
+          const children = cloneVNode(this.props.children, { items });
+          return <div className="wrapper1">{children}</div>;
+        }
+      }
+
+      class Wrapper2 extends Component {
+        render() {
+          const children = this.props.children.map(c => {
+            return cloneVNode(c, {
+              propsIndex: c.props && c.props.index,
+              name: (c.props && c.props.index) != null ? this.props.items[c.props.index].name : 'default-name',
+              age: (c.props && c.props.index) != null ? this.props.items2[c.props.index].age : 'default-age'
+            });
+          });
+
+          return <div className="wrapper2">{children}</div>;
+        }
+      }
+
+      class Item extends Component {
+        render() {
+          return (
+            <span>
+              item {this.props.name} - age: {this.props.age}
+            </span>
+          );
+        }
+      }
+
+      class NormalItem extends Component {
+        render() {
+          return (
+            <span>
+              Normal Item {this.props.name} - age: {this.props.age}
+            </span>
+          );
+        }
+      }
+
+      class App extends Component {
+        render() {
+          const content = [<NormalItem />, <NormalItem />];
+
+          items.forEach((d, idx) => content.push(<Item index={idx} />));
+
+          return (
+            <Wrapper1>
+              <Wrapper2 items2={items2}>{content}</Wrapper2>
+            </Wrapper1>
+          );
+        }
+      }
+
+      render(<App />, container);
+
+      expect(container.innerHTML).toBe(`<div class="wrapper1"><div class="wrapper2"><span>Normal Item default-name \
+- age: default-age</span><span>Normal Item default-name - age: default-age</span><span>item Mike Brady - age: \
+28</span><span>item Carol Brady - age: 26</span><span>item Greg Brady - age: 16</span><span>item Marcia Brady \
+- age: 15</span></div></div>`);
+    });
+  });
+
+  it('Should not clone all children of Component', () => {
+    // React fiddle of cloneElement https://jsfiddle.net/5wh3cfn0/
+    class Hello extends Component {
+      render() {
+        return <div>Hello {this.props.name}</div>;
+      }
+    }
+
+    const node1 = (
+      <Hello>
+        <span>1</span>
+      </Hello>
+    );
+    const cloned1 = cloneVNode(node1);
+
+    expect(node1.props.children).toBe(cloned1.props.children);
+    expect(node1).not.toBe(cloned1);
+    expect(node1.props).not.toBe(cloned1.props);
+
+    const node = <div>{[null, <div>1</div>, [<div>1</div>, <div>2</div>]]}</div>;
+    const cloned = cloneVNode(node);
+
+    // Following assertion depends if Inferno-compat is used or not
+    // expect(node.props.children).toBe(cloned.props.children);
+    expect(node).not.toBe(cloned);
+    expect(node.props).not.toBe(cloned.props);
+  });
+
+  it('Should be possible to clone fragment', () => {
+    const frag = (
+      <Fragment>
+        <span>1</span>
+        <span>2</span>
+      </Fragment>
+    );
+
+    render(cloneVNode(frag), container);
+
+    expect(container.innerHTML).toBe('<span>1</span><span>2</span>');
+
+    const firstChild = container.firstChild;
+
+    render(cloneVNode(frag), container);
+
+    expect(firstChild).toBe(container.firstChild);
+
+    expect(container.innerHTML).toBe('<span>1</span><span>2</span>');
+  });
 });

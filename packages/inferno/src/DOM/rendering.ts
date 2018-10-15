@@ -1,4 +1,4 @@
-import { isFunction, isNullOrUndef, throwError, warning } from 'inferno-shared';
+import { isFunction, isInvalid, isNullOrUndef, throwError, warning } from 'inferno-shared';
 import { VNodeFlags } from 'inferno-vnode-flags';
 import { directClone } from '../core/implementation';
 import { InfernoNode, VNode } from '../core/types';
@@ -7,17 +7,17 @@ import { patch } from './patching';
 import { remove } from './unmounting';
 import { callAll, options, EMPTY_OBJ, LIFECYCLE } from './utils/common';
 
-const isBrowser: boolean = typeof window !== 'undefined';
+const hasDocumentAvailable: boolean = typeof document !== 'undefined';
 
 if (process.env.NODE_ENV !== 'production') {
-  if (isBrowser && !document.body) {
+  if (hasDocumentAvailable && !document.body) {
     warning(
       'Inferno warning: you cannot initialize inferno without "document.body". Wait on "DOMContentLoaded" event, add script to bottom of body, or use async/defer attributes on script tag.'
     );
   }
 }
 
-const documentBody = isBrowser ? document.body : null;
+const documentBody = hasDocumentAvailable ? document.body : null;
 
 export function __render(
   input: VNode | null | InfernoNode | undefined,
@@ -29,6 +29,9 @@ export function __render(
   if (process.env.NODE_ENV !== 'production') {
     if (documentBody === parentDOM) {
       throwError('you cannot render() to the "document.body". Use an empty element as a container instead.');
+    }
+    if (isInvalid(parentDOM)) {
+      throwError(`render target ( DOM ) is mandatory, received ${parentDOM === null ? 'null' : typeof parentDOM}`);
     }
   }
   let rootInput = (parentDOM as any).$V as VNode | null;
@@ -77,10 +80,10 @@ export function render(
 }
 
 export function createRenderer(parentDOM?) {
-  return function renderer(lastInput, nextInput) {
+  return function renderer(lastInput, nextInput, callback, context) {
     if (!parentDOM) {
       parentDOM = lastInput;
     }
-    render(nextInput, parentDOM);
+    render(nextInput, parentDOM, callback, context);
   };
 }
