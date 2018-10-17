@@ -16,7 +16,7 @@ module.exports = function(config) {
   config.set({
     basePath: '../../',
 
-    frameworks: ['detectBrowsers', 'jasmine', 'jasmine-matchers'],
+    frameworks: ['detectBrowsers', 'jasmine'],
 
     detectBrowsers: {
       usePhantomJS: false,
@@ -53,7 +53,6 @@ module.exports = function(config) {
       'karma-ie-launcher',
       'karma-detect-browsers',
       'karma-jasmine',
-      'karma-jasmine-matchers',
       'karma-firefox-launcher',
       'karma-webpack',
       'karma-chrome-launcher',
@@ -61,6 +60,8 @@ module.exports = function(config) {
     ],
 
     reporters: ['progress'],
+
+    reportSlowerThan: 1000,
 
     browserConsoleLogOptions: {
       level: 'warn',
