@@ -11,16 +11,6 @@ const customLaunchers = {
     browserName: 'iphone',
     version: '9.3'
   },
-  slIphone6: {
-    base: 'SauceLabs',
-    browserName: 'iphone',
-    version: '10.3'
-  },
-  slIphone7: {
-    base: 'SauceLabs',
-    browserName: 'iphone',
-    version: 'latest'
-  },
   slSafari8: {
     base: 'SauceLabs',
     browserName: 'safari',
@@ -124,7 +114,7 @@ module.exports = function(config) {
       commandTimeout: 400
     },
 
-    plugins: ['karma-jasmine', 'karma-gzip', 'karma-webpack', 'karma-sauce-launcher'],
+    plugins: ['karma-jasmine', 'karma-gzip', 'karma-webpack', 'havunen-karma-sauce-launcher'],
 
     customLaunchers: customLaunchers,
     browsers: Object.keys(customLaunchers),
@@ -133,7 +123,7 @@ module.exports = function(config) {
     browserNoActivityTimeout: 600000,
     browserDisconnectTolerance: 2,
     processKillTimeout: 20000,
-    browserDisconnectTimeout: 2000,
+    browserDisconnectTimeout: 10000,
 
     browserConsoleLogOptions: {
       level: 'warn',
@@ -148,16 +138,9 @@ module.exports = function(config) {
       stats: 'errors-only',
       noInfo: true
     },
-    client: {
-      jasmine: {
-        random: false // Adding jasmine.random false disables test random order
-      }
-    },
+
     webpack: {
       devtool: 'none',
-      output: {
-        filename: '[name]'
-      },
       mode: 'production',
       optimization: {
         splitChunks: false,
