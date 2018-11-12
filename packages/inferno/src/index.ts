@@ -1,3 +1,4 @@
+export * from './core/types';
 import { warning } from 'inferno-shared';
 import {
   createComponentVNode,
@@ -18,8 +19,6 @@ import { mountProps } from './DOM/props';
 import { handleComponentInput, createClassComponentInstance } from './DOM/utils/componentutil';
 import { mount, mountClassComponentCallbacks, mountElement, mountFunctionalComponentCallbacks, mountText } from './DOM/mounting';
 import { createRef, forwardRef, mountRef } from './core/refs';
-
-export * from './core/types';
 
 if (process.env.NODE_ENV !== 'production') {
   /* tslint:disable-next-line:no-empty */
