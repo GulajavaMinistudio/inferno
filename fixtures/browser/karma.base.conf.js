@@ -61,7 +61,7 @@ module.exports = function(config) {
 
     reporters: ['progress'],
 
-    reportSlowerThan: 1000,
+    reportSlowerThan: 500,
 
     browserConsoleLogOptions: {
       level: 'warn',
@@ -70,11 +70,6 @@ module.exports = function(config) {
     colors: true,
     autoWatch: false,
     concurrency: 1,
-
-    webpackMiddleware: {
-      stats: 'errors-only',
-      noInfo: true
-    },
 
     client: {
       jasmine: {
