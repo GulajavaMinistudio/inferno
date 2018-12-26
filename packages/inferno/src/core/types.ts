@@ -1,9 +1,7 @@
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { NativeClipboardEvent, NativeCompositionEvent, NativeDragEvent, NativeFocusEvent } from './nativetypes';
 
-export interface IComponentConstructor<T> {
-  new (props: T, context: any): IComponent<T, any>;
-}
+export type IComponentConstructor<T> = new (props: T, context: any) => IComponent<T, any>;
 
 // IComponent is defined here, instead of Component to de-couple implementation from interface
 export interface IComponent<P, S> {
@@ -41,7 +39,7 @@ export interface IComponent<P, S> {
 
   getSnapshotBeforeUpdate?(prevProps: P, prevState: S): any;
 
-  render(nextProps: P, nextState: S, nextContext: any): InfernoNode | undefined;
+  render(nextProps: P, nextState: S, nextContext: any): InfernoNode | undefined | void;
 }
 
 export interface LinkedEvent<T, E extends Event> {
@@ -155,7 +153,7 @@ export interface Refs<P> {
 export type SFC<P = {}> = StatelessComponent<P>;
 
 export interface StatelessComponent<P = Refs<P>> {
-  (props: P & Refs<P>, context?: any): InfernoNode;
+  (props: P & Refs<P> & {children?: InfernoNode}, context?: any): any
 
   defaultProps?: Partial<P>;
   defaultHooks?: Refs<P>;
@@ -3249,7 +3247,7 @@ declare global {
     interface Element extends InfernoElement<any> {}
 
     interface ElementClass extends IComponent<any, any> {
-      render(nextProps, nextState, nextContext): InfernoNode | undefined;
+      render(nextProps, nextState, nextContext): InfernoNode | undefined | void;
     }
 
     interface FunctionalElement extends StatelessComponent<any> {}
