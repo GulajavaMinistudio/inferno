@@ -1,16 +1,13 @@
 import { isFunction, isNull, isNullOrUndef } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { VNode } from '../core/types';
-import { delegatedEvents, handleEvent } from './events/delegation';
+import { syntheticEvents, unmountSyntheticEvent } from './events/delegation';
 import { EMPTY_OBJ, findDOMfromVNode, removeVNodeDOM } from './utils/common';
 import { unmountRef } from '../core/refs';
 
-export function remove(vNode: VNode, parentDOM: Element | null) {
+export function remove(vNode: VNode, parentDOM: Element) {
   unmount(vNode);
-
-  if (parentDOM) {
-    removeVNodeDOM(vNode, parentDOM);
-  }
+  removeVNodeDOM(vNode, parentDOM);
 }
 
 export function unmount(vNode) {
@@ -31,8 +28,8 @@ export function unmount(vNode) {
 
       for (let i = 0, len = keys.length; i < len; i++) {
         const key = keys[i];
-        if (delegatedEvents[key]) {
-          handleEvent(key, null, vNode.dom);
+        if (syntheticEvents[key]) {
+          unmountSyntheticEvent(key, vNode.dom);
         }
       }
     }
@@ -54,7 +51,7 @@ export function unmount(vNode) {
       ref = vNode.ref;
 
       if (!isNullOrUndef(ref) && isFunction(ref.onComponentWillUnmount)) {
-        ref.onComponentWillUnmount(findDOMfromVNode(vNode, true), vNode.props || EMPTY_OBJ);
+        ref.onComponentWillUnmount(findDOMfromVNode(vNode, true) as Element, vNode.props || EMPTY_OBJ);
       }
 
       unmount(children);

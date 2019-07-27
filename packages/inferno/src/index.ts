@@ -2,13 +2,13 @@ export * from './core/types';
 import { warning } from 'inferno-shared';
 import {
   createComponentVNode,
+  createFragment,
   createPortal,
   createTextVNode,
   createVNode,
   directClone,
   getFlagsForElementVnode,
-  normalizeProps,
-  createFragment
+  normalizeProps
 } from './core/implementation';
 import { linkEvent } from './DOM/events/linkEvent';
 import { createRenderer, render, __render } from './DOM/rendering';
@@ -17,8 +17,8 @@ import { Component, ComponentType, rerender } from './core/component';
 import { mountProps } from './DOM/props';
 
 import { handleComponentInput, createClassComponentInstance } from './DOM/utils/componentutil';
-import { mount, mountClassComponentCallbacks, mountElement, mountFunctionalComponentCallbacks, mountText } from './DOM/mounting';
-import { createRef, forwardRef, mountRef } from './core/refs';
+import { mount, mountClassComponentCallbacks, mountElement, mountFunctionalComponentCallbacks } from './DOM/mounting';
+import { createRef, mountRef, forwardRef } from './core/refs';
 
 if (process.env.NODE_ENV !== 'production') {
   /* tslint:disable-next-line:no-empty */
@@ -68,7 +68,6 @@ export {
   mountElement as _ME,
   mountFunctionalComponentCallbacks as _MFCC,
   mountRef as _MR,
-  mountText as _MT,
   mountProps as _MP,
   __render
 };

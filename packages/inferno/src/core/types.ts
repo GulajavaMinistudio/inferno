@@ -132,7 +132,7 @@ export interface ForwardRef {
 }
 
 export interface Refs<P> {
-  onComponentDidMount?: (domNode: Element, nextProps: P) => void;
+  onComponentDidMount?: (domNode: Element | null, nextProps: P) => void;
 
   onComponentWillMount?(): void;
 
@@ -142,7 +142,7 @@ export interface Refs<P> {
 
   onComponentDidUpdate?(lastProps: P, nextProps: P): void;
 
-  onComponentWillUnmount?(domNode: Element): void;
+  onComponentWillUnmount?(domNode: Element, nextProps: P): void;
 }
 
 export interface Props<P, T = Element> extends Refs<P> {

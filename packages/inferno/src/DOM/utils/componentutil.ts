@@ -1,4 +1,4 @@
-import { createFragment, createTextVNode, createVoidVNode, directClone } from '../../core/implementation';
+import { createFragment, createTextVNode, directClone } from '../../core/implementation';
 import { combineFrom, isArray, isFunction, isInvalid, isNull, isStringOrNumber, warning } from 'inferno-shared';
 import { createDerivedState, EMPTY_OBJ, getComponentName } from './common';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
@@ -98,14 +98,12 @@ export function createClassComponentInstance(vNode: VNode, Component, props, con
 }
 
 export function handleComponentInput(input: any): VNode {
-  if (isInvalid(input)) {
-    input = createVoidVNode();
-  } else if (isStringOrNumber(input)) {
-    input = createTextVNode(input, null);
-  } else if (isArray(input)) {
-    input = createFragment(input, ChildFlags.UnknownChildren, null);
-  } else if (input.flags & VNodeFlags.InUse) {
-    input = directClone(input);
+  if (isInvalid(input) || isStringOrNumber(input)) {
+    return createTextVNode(input, null);
   }
-  return input;
+  if (isArray(input)) {
+    return createFragment(input, ChildFlags.UnknownChildren, null);
+  }
+
+  return input.flags & VNodeFlags.InUse ? directClone(input) : input;
 }

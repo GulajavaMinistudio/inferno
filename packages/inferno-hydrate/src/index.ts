@@ -1,6 +1,6 @@
 import { isFunction, isInvalid, isNull, isNullOrUndef, throwError, warning } from 'inferno-shared';
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
-import { VNode, _CI, _HI, _MT, _M, _MCCC, _ME, _MFCC, _MR, _MP, render } from 'inferno';
+import { VNode, _CI, _HI, _M, _MCCC, _ME, _MFCC, _MR, _MP, render } from 'inferno';
 
 function isSameInnerHTML(dom: Element, innerHTML: string): boolean {
   const tempdom = document.createElement('i');
@@ -54,7 +54,7 @@ function hydrateComponent(vNode: VNode, parentDOM: Element, dom: Element, contex
     const input = _HI(type(props, context));
     currentNode = hydrateVNode(input, parentDOM, dom, context, isSVG, lifecycle);
     vNode.children = input;
-    _MFCC(props, ref, vNode, lifecycle);
+    _MFCC(vNode, lifecycle);
   }
 
   return currentNode;
@@ -159,8 +159,7 @@ function hydrateElement(vNode: VNode, parentDOM: Element, dom: Element, context:
 
 function hydrateText(vNode: VNode, parentDOM: Element, dom: Element) {
   if (dom.nodeType !== 3) {
-    _MT(vNode, null, null);
-    parentDOM.replaceChild(vNode.dom as Element, dom);
+    parentDOM.replaceChild((vNode.dom = document.createTextNode(vNode.children as string) as any), dom);
   } else {
     const text = vNode.children;
 

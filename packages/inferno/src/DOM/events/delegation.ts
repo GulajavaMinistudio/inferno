@@ -1,6 +1,7 @@
-import { isNull } from 'inferno-shared';
+import { isFunction, isNull } from 'inferno-shared';
 import { LinkedEvent, SemiSyntheticEvent } from './../../core/types';
-import { normalizeEventName } from './../utils/common';
+import { isLastValueSameLinkEvent, normalizeEventName } from './../utils/common';
+import { isLinkEventObject } from './linkEvent';
 
 interface IEventData {
   dom: Element;
@@ -18,7 +19,6 @@ function getDelegatedEventObject(v) {
     onMouseDown: v,
     onMouseMove: v,
     onMouseUp: v,
-    onSubmit: v,
     onTouchEnd: v,
     onTouchMove: v,
     onTouchStart: v
@@ -27,23 +27,27 @@ function getDelegatedEventObject(v) {
 const attachedEventCounts = getDelegatedEventObject(0);
 const attachedEvents = getDelegatedEventObject(null);
 
-export const delegatedEvents = getDelegatedEventObject(true);
+export const syntheticEvents = getDelegatedEventObject(true);
 
-export function handleEvent(name: string, nextEvent: Function | LinkedEvent<any, any> | null, dom) {
+function updateOrAddSyntheticEvent(name: string, dom) {
   let eventsObject = dom.$EV;
 
-  if (nextEvent) {
-    if (attachedEventCounts[name] === 0) {
+  if (!eventsObject) {
+    eventsObject = (dom as any).$EV = getDelegatedEventObject(null);
+  }
+  if (!eventsObject[name]) {
+    if (++attachedEventCounts[name] === 1) {
       attachedEvents[name] = attachEventToDocument(name);
     }
-    if (!eventsObject) {
-      eventsObject = (dom as any).$EV = getDelegatedEventObject(null);
-    }
-    if (!eventsObject[name]) {
-      ++attachedEventCounts[name];
-    }
-    eventsObject[name] = nextEvent;
-  } else if (eventsObject && eventsObject[name]) {
+  }
+
+  return eventsObject;
+}
+
+export function unmountSyntheticEvent(name: string, dom) {
+  const eventsObject = dom.$EV;
+
+  if (eventsObject && eventsObject[name]) {
     if (--attachedEventCounts[name] === 0) {
       document.removeEventListener(normalizeEventName(name), attachedEvents[name]);
       attachedEvents[name] = null;
@@ -52,9 +56,27 @@ export function handleEvent(name: string, nextEvent: Function | LinkedEvent<any,
   }
 }
 
+export function handleSyntheticEvent(
+  name: string,
+  lastEvent: Function | LinkedEvent<any, any> | null | false | true,
+  nextEvent: Function | LinkedEvent<any, any> | null | false | true,
+  dom
+) {
+  if (isFunction(nextEvent)) {
+    updateOrAddSyntheticEvent(name, dom)[name] = nextEvent;
+  } else if (isLinkEventObject(nextEvent)) {
+    if (isLastValueSameLinkEvent(lastEvent, nextEvent)) {
+      return;
+    }
+    updateOrAddSyntheticEvent(name, dom)[name] = nextEvent;
+  } else {
+    unmountSyntheticEvent(name, dom);
+  }
+}
+
 function dispatchEvents(event: SemiSyntheticEvent<any>, target, isClick: boolean, name: string, eventData: IEventData) {
   let dom = target;
-  while (!isNull(dom)) {
+  do {
     // Html Nodes can be nested fe: span inside button in that scenario browser does not handle disabled attribute on parent,
     // because the event listener is on document.body
     // Don't process clicks on disabled elements
@@ -69,18 +91,14 @@ function dispatchEvents(event: SemiSyntheticEvent<any>, target, isClick: boolean
       if (currentEvent) {
         // linkEvent object
         eventData.dom = dom;
-        if (currentEvent.event) {
-          currentEvent.event(currentEvent.data, event);
-        } else {
-          currentEvent(event);
-        }
+        currentEvent.event ? currentEvent.event(currentEvent.data, event) : currentEvent(event);
         if (event.cancelBubble) {
           return;
         }
       }
     }
     dom = dom.parentNode;
-  }
+  } while (!isNull(dom));
 }
 
 function stopPropagation() {
@@ -98,35 +116,50 @@ function isPropagationStopped() {
   return this.cancelBubble;
 }
 
-function attachEventToDocument(name: string) {
-  const docEvent = function(event: SemiSyntheticEvent<any>) {
-    const isClick = name === 'onClick' || name === 'onDblClick';
+function extendEventProperties(event) {
+  // Event data needs to be object to save reference to currentTarget getter
+  const eventData: IEventData = {
+    dom: document as any
+  };
 
-    if (isClick && (event as any).button !== 0) {
+  event.isDefaultPrevented = isDefaultPrevented;
+  event.isPropagationStopped = isPropagationStopped;
+  event.stopPropagation = stopPropagation;
+
+  Object.defineProperty(event, 'currentTarget', {
+    configurable: true,
+    get: function get() {
+      return eventData.dom;
+    }
+  });
+
+  return eventData;
+}
+
+function rootClickEvent(name: string) {
+  return function(event) {
+    if ((event as any).button !== 0) {
       // Firefox incorrectly triggers click event for mid/right mouse buttons.
-      // This bug has been active for 12 years.
+      // This bug has been active for 17 years.
       // https://bugzilla.mozilla.org/show_bug.cgi?id=184051
       event.stopPropagation();
       return;
     }
 
-    event.isDefaultPrevented = isDefaultPrevented;
-    event.isPropagationStopped = isPropagationStopped;
-    event.stopPropagation = stopPropagation;
-    // Event data needs to be object to save reference to currentTarget getter
-    const eventData: IEventData = {
-      dom: document as any
-    };
-
-    Object.defineProperty(event, 'currentTarget', {
-      configurable: true,
-      get: function get() {
-        return eventData.dom;
-      }
-    });
-
-    dispatchEvents(event, event.target, isClick, name, eventData);
+    dispatchEvents(event, event.target, true, name, extendEventProperties(event));
   };
-  document.addEventListener(normalizeEventName(name), docEvent);
-  return docEvent;
+}
+
+function rootEvent(name: string) {
+  return function(event: SemiSyntheticEvent<any>) {
+    dispatchEvents(event, event.target, false, name, extendEventProperties(event));
+  };
+}
+
+function attachEventToDocument(name: string) {
+  const attachedEvent = name === 'onClick' || name === 'onDblClick' ? rootClickEvent(name) : rootEvent(name);
+
+  document.addEventListener(normalizeEventName(name), attachedEvent);
+
+  return attachedEvent;
 }

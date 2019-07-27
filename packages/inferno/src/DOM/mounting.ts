@@ -2,7 +2,7 @@ import { isFunction, isNull, isNullOrUndef, isString, isStringOrNumber, throwErr
 import { ChildFlags, VNodeFlags } from 'inferno-vnode-flags';
 import { createVoidVNode, directClone } from '../core/implementation';
 import { VNode } from '../core/types';
-import { documentCreateElement, EMPTY_OBJ, findDOMfromVNode, insertOrAppend, setTextContent } from './utils/common';
+import { documentCreateElement, EMPTY_OBJ, findDOMfromVNode, insertOrAppend, safeCall1, setTextContent } from './utils/common';
 import { mountProps } from './props';
 import { createClassComponentInstance, handleComponentInput } from './utils/componentutil';
 import { validateKeys } from '../core/validate';
@@ -17,6 +17,7 @@ export function mount(vNode: VNode, parentDOM: Element | null, context: Object, 
     mountClassComponent(vNode, parentDOM, context, isSVG, nextNode, lifecycle);
   } else if (flags & VNodeFlags.ComponentFunction) {
     mountFunctionalComponent(vNode, parentDOM, context, isSVG, nextNode, lifecycle);
+    mountFunctionalComponentCallbacks(vNode, lifecycle);
   } else if (flags & VNodeFlags.Void || flags & VNodeFlags.Text) {
     mountText(vNode, parentDOM, nextNode);
   } else if (flags & VNodeFlags.Fragment) {
@@ -77,13 +78,9 @@ export function mountElement(vNode: VNode, parentDOM: Element | null, context: O
   const flags = vNode.flags;
   const props = vNode.props;
   const className = vNode.className;
-  const ref = vNode.ref;
   let children = vNode.children;
   const childFlags = vNode.childFlags;
-  isSVG = isSVG || (flags & VNodeFlags.SvgElement) > 0;
-  const dom = documentCreateElement(vNode.type, isSVG);
-
-  vNode.dom = dom;
+  const dom = (vNode.dom = documentCreateElement(vNode.type, (isSVG = isSVG || (flags & VNodeFlags.SvgElement) > 0)));
 
   if (!isNullOrUndef(className) && className !== '') {
     if (isSVG) {
@@ -121,15 +118,15 @@ export function mountElement(vNode: VNode, parentDOM: Element | null, context: O
   }
 
   if (process.env.NODE_ENV !== 'production') {
-    if (isString(ref)) {
+    if (isString(vNode.ref)) {
       throwError('string "refs" are not supported in Inferno 1.0. Use callback ref or Inferno.createRef() API instead.');
     }
   }
-  mountRef(ref, dom, lifecycle);
+  mountRef(vNode.ref, dom, lifecycle);
 }
 
 export function mountArrayChildren(children, dom: Element | null, context: Object, isSVG: boolean, nextNode: Element | null, lifecycle: Function[]): void {
-  for (let i = 0, len = children.length; i < len; ++i) {
+  for (let i = 0; i < children.length; ++i) {
     let child = children[i];
 
     if (child.flags & VNodeFlags.InUse) {
@@ -145,15 +142,12 @@ export function mountClassComponent(vNode: VNode, parentDOM: Element | null, con
   mountClassComponentCallbacks(vNode.ref, instance, lifecycle);
 }
 
-export function mountFunctionalComponent(vNode: VNode, parentDOM: Element | null, context: Object, isSVG: boolean, nextNode: Element | null, lifecycle): void {
-  const type = vNode.type;
-  const props = vNode.props || EMPTY_OBJ;
-  const ref = vNode.ref;
+function renderFunctionalComponent(vNode: VNode, context) {
+  return vNode.flags & VNodeFlags.ForwardRef ? vNode.type.render(vNode.props || EMPTY_OBJ, vNode.ref, context) : vNode.type(vNode.props || EMPTY_OBJ, context);
+}
 
-  const input = handleComponentInput(vNode.flags & VNodeFlags.ForwardRef ? type(props, ref, context) : type(props, context));
-  vNode.children = input;
-  mount(input, parentDOM, context, isSVG, nextNode, lifecycle);
-  mountFunctionalComponentCallbacks(props, ref, vNode, lifecycle);
+export function mountFunctionalComponent(vNode: VNode, parentDOM: Element | null, context: Object, isSVG: boolean, nextNode: Element | null, lifecycle): void {
+  mount((vNode.children = handleComponentInput(renderFunctionalComponent(vNode, context))), parentDOM, context, isSVG, nextNode, lifecycle);
 }
 
 function createClassMountCallback(instance) {
@@ -178,19 +172,19 @@ export function mountClassComponentCallbacks(ref, instance, lifecycle: Function[
   }
 }
 
-function createOnMountCallback(ref, vNode, props) {
+function createOnMountCallback(ref, vNode) {
   return () => {
-    ref.onComponentDidMount(findDOMfromVNode(vNode, true), props);
+    ref.onComponentDidMount(findDOMfromVNode(vNode, true), vNode.props || EMPTY_OBJ);
   };
 }
 
-export function mountFunctionalComponentCallbacks(props, ref, vNode: VNode, lifecycle: Function[]) {
+export function mountFunctionalComponentCallbacks(vNode: VNode, lifecycle: Function[]) {
+  const ref = vNode.ref;
+
   if (!isNullOrUndef(ref)) {
-    if (isFunction(ref.onComponentWillMount)) {
-      ref.onComponentWillMount(props);
-    }
+    safeCall1(ref.onComponentWillMount, vNode.props || EMPTY_OBJ);
     if (isFunction(ref.onComponentDidMount)) {
-      lifecycle.push(createOnMountCallback(ref, vNode, props));
+      lifecycle.push(createOnMountCallback(ref, vNode));
     }
   }
 }
