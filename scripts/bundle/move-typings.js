@@ -1,5 +1,4 @@
 const rimraf = require('rimraf');
-const fs = require('fs-extra');
 const join = require('path').join;
 const cwd = process.cwd();
 const pkgJSON = require(join(cwd, 'package.json'));

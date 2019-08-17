@@ -9,8 +9,8 @@ const gzipSize = require('gzip-size');
 const Table = require('cli-table');
 require('colors');
 
-const PACKAGES_DIR = join(__dirname, '../packages');
-const INFERNO_VERSION = require(join(__dirname, '../package.json')).version;
+const PACKAGES_DIR = join(__dirname, '../../packages');
+const INFERNO_VERSION = require(join(__dirname, '../../package.json')).version;
 const readFileAsync = promisify(fs.readFile);
 const globAsync = promisify(glob);
 
